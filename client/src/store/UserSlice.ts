@@ -4,12 +4,14 @@ import DummyLogo from "../assets/DummyLogo.jpeg";
 export interface initState {
     userName: String,
     userProfileUrl: String,
-    phoneNumber: String
+    phoneNumber: String,
+    email: String
 }
 let initialState: initState = {
     userName: "",
     userProfileUrl: DummyLogo,
-    phoneNumber: ""
+    phoneNumber: "",
+    email: ""
 }
 const userSlice = createSlice({
     name: "user",
@@ -23,10 +25,13 @@ const userSlice = createSlice({
         },
         setPhoneNumber(state: initState, action) {
             state.phoneNumber = action.payload
+        },
+        setEmail(state: initState, action) {
+            state.email = action.payload;
         }
     }
 })
 
-export const { setProfileUrl, setUserName, setPhoneNumber } = userSlice.actions;
+export const { setProfileUrl, setUserName, setPhoneNumber, setEmail } = userSlice.actions;
 
 export default userSlice.reducer;

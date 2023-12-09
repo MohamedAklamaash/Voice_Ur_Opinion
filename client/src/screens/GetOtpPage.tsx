@@ -1,7 +1,7 @@
 import { ChangeEvent, KeyboardEvent, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { setPhoneNumber } from "../store/UserSlice";
+import { setEmail, setPhoneNumber } from "../store/UserSlice";
 import axios from "axios";
 import { Theme } from "../App";
 type Props = {
@@ -36,12 +36,11 @@ const GetOtpPage: React.FC<Props> = ({
         otp,
       }
     );
-    console.log(success);
 
     if (!success) {
       navigate("/signIn");
     }
-
+    dispatch(setEmail(email));
     setstepPageCount(stepPageCount + 1);
     navigate("/enterName");
   };

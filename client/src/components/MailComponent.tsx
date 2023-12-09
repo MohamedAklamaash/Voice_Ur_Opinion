@@ -56,7 +56,7 @@ const MailComponent = ({
         </section>
         <section>
           <h1 className="mb-10 ml-10 tracking-widest font-poppins text-blue-500">
-            By entering your maik id, you’re agreeing to our Terms of Service
+            By entering your mail id, you’re agreeing to our Terms of Service
             and Privacy Policy. Thanks!
           </h1>
         </section>
