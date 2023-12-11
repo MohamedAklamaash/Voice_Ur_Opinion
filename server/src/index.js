@@ -12,13 +12,18 @@ const helmet_1 = __importDefault(require("helmet"));
 const cors_1 = __importDefault(require("cors"));
 const Otp_routes_1 = __importDefault(require("./routes/Otp_routes"));
 const mongoConnection_1 = require("./mongoConnection");
+const Room_Routes_1 = __importDefault(require("./routes/Room_Routes"));
+const ActivationRoutes_1 = __importDefault(require("./routes/ActivationRoutes"));
 (0, mongoConnection_1.mongoConnection)();
 app.use((0, cors_1.default)());
 app.use((0, morgan_1.default)("tiny"));
 app.use((0, helmet_1.default)());
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: false }));
+//routes
 app.use("/Otp", Otp_routes_1.default);
+app.use("/room", Room_Routes_1.default);
+app.use("/userActivation", ActivationRoutes_1.default);
 app.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`);
 });

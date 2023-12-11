@@ -2,30 +2,87 @@ import { RoomSchema } from "../models/RoomModal"
 import { Request, Response } from "express";
 import { UserSchema } from "../models/UserDataModel";
 
-//create a room,join a room,owner can update the room details,delete the room
-export const joinRoom = async (req:Request,res:Response) => {
+//create a room,join a room,owner can update the room details,delete the room,get room details
+
+export const createARoom = async (req: Request, res: Response) => {
     try {
-        const {email,userId,roomId} = req.body;
-        if(!email||!userId){
+        const { email, title, roomType } = req.body;
+        if (!email || !title || !roomType) {
             return res.status(404).json({ success: false, msg: "Need data for resource authorization" });
         }
-        const roomData = await RoomSchema.findById(roomId);
-        if(!roomData){
-            return res.status(404).json({success:false,msg:"No such Room exists"});
+        const owner = await UserSchema.findOne({ email });
+        if(!owner){
+            return res.status(404).json({success:false,msg:"Email's user not Found",owner})
         }
-        const userData = await UserSchema.findOne({email});
-        if(!userData){
-            return res.status(404).json({success:false,msg:"User doesn't exist"});
-        }
-        if(!roomData.speakers.includes(userData.name)){
-            await roomData.updateOne({$push:{speakers:userData.name}});
-            await roomData.save();
-            return res.status(201).json({success:true,msg:"User joined Room successfully"});
-        }
-        else{
-            return res.status(301).json({success:false,msg:"User already exists in the Room"});
-        }
+        const data = await RoomSchema.create({
+            title, owner: owner?.name, roomType,speakers:[owner?.name]
+        });
+        return res.status(200).json({ success: true, msg: "Room created successfully", data });
     } catch (error) {
-        console.log("Error in Joining the Room");   
+        console.log("Error in creating the room");
     }
 }
+
+export const getRoomDetails = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const data = await RoomSchema.findById(id);
+        if (!data) {
+            return res.status(404).json({ success: false, msg: "No room found" });
+        }
+        return res.status(201).json({ success: true, data });
+    } catch (error) {
+        console.log("Error in getting room details");
+    }
+}
+//need to show only public rooms
+export const getAllRooms = async (req: Request, res: Response) => {
+    try {
+        const data = await RoomSchema.find({ roomType: "public" });
+        if (!data) {
+            return res.status(404).json({ success: false, msg: "No room exists" });
+        }
+        if (data.length === 0) {
+            return res.status(404).json({ success: false, msg: "No public rooms exist" });
+        }
+        return res.status(200).json({ success: true, data });
+    } catch (error) {
+        console.log("Error in getting all rooms");
+    }
+}
+
+export const deleteARoom = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const data = await RoomSchema.findByIdAndDelete(id);
+        if (!data) {
+            return res.status(404).json({ success: false, msg: "No room found with this id" });
+        }
+        return res.status(200).json({ success: true, msg: "Room deleted successfully" });
+    } catch (error) {
+        console.log("Error in deleting the room");
+    }
+}
+
+export const updateRoom = async (req: Request, res: Response) => {
+    try {
+        const { email } = req.body;
+        const { id } = req.params;
+        const userData = await UserSchema.findOne({ email });
+        const roomData = await RoomSchema.findById(id);
+
+        if (roomData?.owner === userData?.name) {
+            // Check if roomData is not null before updating
+            if (roomData) {
+                roomData.updateOne({ $set: req.body });
+                await roomData.save();
+                return res.status(201).json({ success: true, roomData });
+            }
+        } else {
+            return res.status(401).json({ success: false, msg: "Cannot update because this user is not the owner of this room" });
+        }
+    } catch (error) {
+        console.log("Error in updating the room:", error);
+        return res.status(500).json({ success: false, msg: "Internal Server Error" });
+    }
+};

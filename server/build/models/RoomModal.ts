@@ -15,7 +15,8 @@ const roomModal = new mongoose.Schema({
     },
     roomType:{
         type:String,
-        required:true
+        required:true,
+        enum:["social","public","private"]
     }
 })
 

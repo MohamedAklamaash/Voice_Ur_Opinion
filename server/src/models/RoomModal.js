@@ -20,7 +20,8 @@ const roomModal = new mongoose_1.default.Schema({
     },
     roomType: {
         type: String,
-        required: true
+        required: true,
+        enum: ["social", "public", "private"]
     }
 });
 exports.RoomSchema = mongoose_1.default.model("rooms", roomModal);

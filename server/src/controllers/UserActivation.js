@@ -21,18 +21,17 @@ const activateUser = async (req, res) => {
 exports.activateUser = activateUser;
 const deactivateUser = async (req, res) => {
     try {
-        const { name, email } = req.body;
-        if (!name || !email) {
+        const { email } = req.body;
+        if (!email) {
             return res.status(404).json({ success: false, msg: "Need data for resource authorization" });
         }
         const data = await UserDataModel_1.UserSchema.findOne({ email });
-        const activated = false;
         if (!data) {
             return res.status(201).json({ success: false, msg: "User not Found" });
         }
-        const user = await UserDataModel_1.UserSchema.create({ name, email, activated });
-        await user.save();
-        return res.status(201).json({ success: true, msg: "User DeActivated Successfully" });
+        data.activated = false;
+        await data.save();
+        return res.status(201).json({ success: true, msg: "User deactivated Successfully" });
     }
     catch (error) {
         console.log("error in deactivating the user");
