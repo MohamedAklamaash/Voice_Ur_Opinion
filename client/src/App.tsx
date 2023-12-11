@@ -82,13 +82,7 @@ const App = () => {
             }
           />
           <Route
-            element={
-              <MainHome
-                stepPageCount={stepPageCount}
-                setstepPageCount={setstepPageCount}
-                primaryTheme={primaryTheme}
-              />
-            }
+            element={<MainHome primaryTheme={primaryTheme} />}
             path="/home"
           />
         </Routes>

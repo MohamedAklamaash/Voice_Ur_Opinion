@@ -1,3 +1,4 @@
+import React from "react";
 import { Theme } from "../App";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
@@ -5,6 +6,7 @@ import DummyLogo from "../assets/DummyLogo.jpeg";
 import axios from "axios";
 import { useDispatch } from "react-redux";
 import { setProfileUrl } from "../store/UserSlice";
+
 type Props = {
   setstepPageCount: (num: number) => void;
   stepPageCount: number;
@@ -39,7 +41,7 @@ const LoginPage = ({
       const data = new FormData();
       data.append("file", image);
       data.append("upload_preset", "qyde2sjh");
-
+      setLoading(true);
       const response = await axios.post(
         "https://api.cloudinary.com/v1_1/duhkiwuqq/image/upload",
         data
@@ -78,7 +80,13 @@ const LoginPage = ({
   };
 
   return (
-    <div className="flex items-center min-h-screen justify-center flex-col">
+    <div className="flex items-center min-h-screen justify-center flex-col relative">
+      {loading && (
+        <div className="absolute inset-0 bg-black opacity-50 flex items-center justify-center">
+          <div className="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-32 w-32"></div>
+        </div>
+      )}
+
       <div className="relative mb-10">
         {image === "" ? (
           <img
@@ -123,7 +131,7 @@ const LoginPage = ({
         Upload Image
       </button>
       <button
-        className=" rounded-full bg-primary-indigo px-10 cursor-pointer  w-4/6 text-xl py-4 mb-10 font-montserrat "
+        className="rounded-full bg-primary-indigo px-10 cursor-pointer w-4/6 text-xl py-4 mb-10 font-montserrat"
         onClick={() => {
           setstepPageCount(stepPageCount + 1);
           if (url !== "") {
@@ -133,7 +141,7 @@ const LoginPage = ({
         }}
       >
         Welcome{" "}
-        <span className=" text-primary-success font-bold font-roboto  ">
+        <span className="text-primary-success font-bold font-roboto">
           {userName?.charAt(0).toLocaleUpperCase() + userName?.slice(1)}
         </span>
       </button>

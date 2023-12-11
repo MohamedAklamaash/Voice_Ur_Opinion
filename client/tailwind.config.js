@@ -16,6 +16,7 @@ export default {
         "primary-hr-color": "#323232",
         "primary-black-400": "#323232",
         "gradient-violet": "#6B6AC3",
+        "dialog-bg":"rgba(0,0,0,0.6)"
       },
       screens: {
         sm: "640px",
