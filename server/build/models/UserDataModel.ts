@@ -18,6 +18,10 @@ const UserModel = new mongoose.Schema({
         type:String,
         default:""
     },
+    userProfileUrl:{
+        type:String,
+        default:""
+    }
 })
 
 export const UserSchema = mongoose.model("userActivation",UserModel);

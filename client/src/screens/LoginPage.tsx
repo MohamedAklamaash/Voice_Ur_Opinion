@@ -49,6 +49,7 @@ const LoginPage = ({
 
       const imageUrl = response?.data?.secure_url;
       setUrl(imageUrl);
+      
       setLoading(false);
       setError(null);
     } catch (error) {

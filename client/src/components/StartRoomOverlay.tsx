@@ -3,6 +3,9 @@ import EarthPic from "../assets/EarthPic.avif";
 import FriendsPic from "../assets/Friends.jpg";
 import LockPic from "../assets/Lock.jpg";
 import { useState } from "react";
+import axios from "axios";
+import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 type Props = {
   setshowModal: (showModel: boolean) => void;
   showModal: boolean;
@@ -11,8 +14,22 @@ type Props = {
 
 type Room = "social" | "public" | "private";
 
+//create a room here in this component
+
 const StartRoomOverlay = ({ setshowModal, showModal, primaryTheme }: Props) => {
   const [selectRoom, setselectRoom] = useState<Room>("social");
+  const navigate = useNavigate();
+  const [title, settitle] = useState<string>("");
+  const { email } = useSelector((state) => state.user);
+  const createARoom = async () => {
+    const { data:{data} } = await axios.post("http://localhost:8001/room/createARoom",{
+      email,
+      title,
+      roomType:selectRoom
+    });
+    navigate(`/room/${data._id}`);
+  };
+
   return (
     <div
       className={` p-10 fixed top-0 bottom-0 left-0 right-0  flex items-center justify-center ${
@@ -56,6 +73,9 @@ const StartRoomOverlay = ({ setshowModal, showModal, primaryTheme }: Props) => {
               ? " bg-primary-black-700 text-primary-white"
               : " bg-primary-white text-primary-black-700 "
           } `}
+          onChange={(e) => {
+            settitle(e.target.value);
+          }}
         />
         <section className=" mt-5 md:flex gap-10">
           <main
@@ -147,6 +167,9 @@ const StartRoomOverlay = ({ setshowModal, showModal, primaryTheme }: Props) => {
                 ? " text-primary-white font-bold"
                 : " text-primary-black-700 font-bold"
             }  bg-primary-success px-8 py-4 rounded-3xl font-poppins`}
+            onClick={()=>{
+              createARoom();
+            }}
           >
             Let's Go
           </button>

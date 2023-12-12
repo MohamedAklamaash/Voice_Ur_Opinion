@@ -1,44 +1,48 @@
 import { Theme } from "../../App";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import { Icon } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import RoomCard from "../../components/RoomCard";
 import StartRoomOverlay from "../../components/StartRoomOverlay";
-
+import axios from "axios";
+import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 type Props = {
   primaryTheme: Theme;
 };
 
+// get all public rooms and display it in the Main Home Page
+
 const MainHome = ({ primaryTheme }: Props) => {
   const [searchVoiceRooms, setsearchVoiceRooms] = useState<string>("");
   const [showModal, setshowModal] = useState<boolean>(false);
-  const objects = [
-    {
-      title: "Meeting Room",
-      roomCreater1: "Alice",
-      roomCreator2: "Bob",
-      onlineCount: 15,
-    },
-    {
-      title: "Conference Room A",
-      roomCreater1: "Charlie",
-      roomCreator2: "David",
-      onlineCount: 8,
-    },
-    {
-      title: "Game Night",
-      roomCreater1: "Eve",
-      roomCreator2: "Frank",
-      onlineCount: 20,
-    },
-    {
-      title: "Study Group",
-      roomCreater1: "Grace",
-      roomCreator2: "Hank",
-      onlineCount: 12,
-    },
-  ];
+  const [publicRooms, setpublicRooms] = useState([]);
+
+  const { userName, phoneNumber, email, userProfileUrl } = useSelector(
+    (state) => state.user
+  );
+
+  const activateUser = async () => {
+    const {data} =  await axios.post(`http://localhost:8001/userActivation/activateUser`, {
+      name: userName,
+      email,
+      userProfileUrl,
+      phoneNumber,
+    });
+    console.log(data);
+  };
+  const getAllPublicRooms = async () => {
+    const {
+      data: { data },
+    } = await axios.get(`http://localhost:8001/room/getAllRooms`);
+    setpublicRooms(data);
+  };
+
+  useEffect(() => {
+    activateUser();
+    getAllPublicRooms();
+  }, []);
 
   return (
     <div className=" min-h-screen mt-2">
@@ -83,20 +87,23 @@ const MainHome = ({ primaryTheme }: Props) => {
         </section>
       </section>
       <div className=" grid md:grid-cols-3 max-md:grid-cols-2 max-sm:grid-cols-1 justify-center items-center md:ml-[8%] max-md:ml-[20%] cursor-pointer ">
-        {objects.map((obj, index) => {
+        {publicRooms.map((obj, index) => {
           return (
-            <RoomCard
-              title={obj.title}
-              roomCreater1={obj.roomCreater1}
-              roomCreator2={obj.roomCreator2}
-              onlineCount={obj.onlineCount}
-            />
+            <>
+              <Link to={`/room/${obj._id}`}>
+                <RoomCard title={obj?.title} owner={obj?.roomCreater1} />
+              </Link>
+            </>
           );
         })}
       </div>
       <div className=" relative">
         {showModal && (
-          <StartRoomOverlay setshowModal={setshowModal} showModal={showModal} primaryTheme={primaryTheme} />
+          <StartRoomOverlay
+            setshowModal={setshowModal}
+            showModal={showModal}
+            primaryTheme={primaryTheme}
+          />
         )}
       </div>
     </div>
