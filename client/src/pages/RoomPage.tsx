@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState,FC } from "react";
 import { Theme } from "../App";
 import { useParams } from "react-router-dom";
 import axios from "axios";
@@ -12,8 +12,11 @@ type Props = {
 //need to properly update about the person whether joined and should be properly render out the page
 //this component doesn't look nizz w.r.t the ui
 //need to add how many users are there in that specific page
+//what if we create this as a dialog box?
+//need to add a green dialog to know that they are active
+//added fc don't know how that works
 
-const RoomPage = ({ primaryTheme }: Props) => {
+const RoomPage:FC<Props> = ({ primaryTheme }: Props) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [roomData, setroomData] = useState({});
@@ -24,7 +27,7 @@ const RoomPage = ({ primaryTheme }: Props) => {
       data: { data },
     } = await axios.get(`http://localhost:8001/room/getRoomDetails/${id}`);
     setroomData(data);
-    if (roomData?.speakers.includes(userName)) {
+    if (data?.speakers.includes(userName)) {
       setuserAlreadyInRoom(true);
     }
   };
@@ -33,6 +36,7 @@ const RoomPage = ({ primaryTheme }: Props) => {
     await axios.put(`http://localhost:8001/room/leaveRoom/${id}`, {
       email,
     });
+    navigate("http://localhost:5173");
   };
 
   const joinRoom = async () => {
@@ -44,7 +48,7 @@ const RoomPage = ({ primaryTheme }: Props) => {
 
   useEffect(() => {
     getRoomDetails();
-  }, [id]);
+  }, []);
 
   const deleteARoom = async () => {
     if (userName === roomData?.owner) {
@@ -54,14 +58,19 @@ const RoomPage = ({ primaryTheme }: Props) => {
 
   if (roomData?.owner === undefined) {
     return (
-      <div>
-        <div className=" fixed top-0 bottom-0 right-0 left-0 flex items-center justify-center">
+      <div className=" min-h-screen bg-black">
+        <div className=" fixed top-0 text-4xl bottom-0 right-0 left-0 flex items-center justify-center">
           Loading..
         </div>
       </div>
     );
   }
 
+  const isUserInTheRoom = () => {
+    if (roomData?.speakers.includes(userName)) {
+      setuserAlreadyInRoom(true);
+    }
+  };
   return (
     <React.Fragment>
       <div className=" min-h-screen">
@@ -104,6 +113,7 @@ const RoomPage = ({ primaryTheme }: Props) => {
             </>
           )}
         </div>
+        {/*    need to update the component below      */}
         <main className=" p-10 grid grid-cols-2 max-md:grid-cols-1 ">
           <h1 className=" text-indigo-700 font-bold font-montserrat text-3xl ">
             {roomData?.owner}

@@ -24,12 +24,15 @@ const MainHome = ({ primaryTheme }: Props) => {
   );
 
   const activateUser = async () => {
-    const {data} =  await axios.post(`http://localhost:8001/userActivation/activateUser`, {
-      name: userName,
-      email,
-      userProfileUrl,
-      phoneNumber,
-    });
+    const { data } = await axios.post(
+      `http://localhost:8001/userActivation/activateUser`,
+      {
+        name: userName,
+        email,
+        userProfileUrl,
+        phoneNumber,
+      }
+    );
     console.log(data);
   };
   const getAllPublicRooms = async () => {
@@ -38,12 +41,13 @@ const MainHome = ({ primaryTheme }: Props) => {
     } = await axios.get(`http://localhost:8001/room/getAllRooms`);
     setpublicRooms(data);
   };
-
+  
   useEffect(() => {
-    activateUser();
     getAllPublicRooms();
   }, []);
-
+  useEffect(() => {
+    activateUser();
+  }, []);
   return (
     <div className=" min-h-screen mt-2">
       <section className=" md:flex items-center justify-around p-2 ">
