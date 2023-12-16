@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Theme } from "../App";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LightModeIcon from "@mui/icons-material/LightMode";
+import { Link } from "react-router-dom";
 
 type Props = {
   name: string;
@@ -86,14 +87,15 @@ const Navbar = ({ name, imgSrc, setprimaryTheme, primaryTheme }: Props) => {
               <h1 className=" p-2  font-poppins text-center tracking-wide text-lg font-bold text-white">
                 {name.charAt(0).toUpperCase() + name.slice(1)}
               </h1>
-              <img
-                src={`${imgSrc}`}
-                alt="Profile Pic"
-                className="w-[50px] h-[50px] rounded-full mx-auto "
-                onClick={() => {
-                  navigate(`/${imgSrc}`);
-                }}
-              />
+              <Link to={`${imgSrc}`}
+              target="_blank"
+              >
+                <img
+                  src={`${imgSrc}`}
+                  alt="Profile Pic"
+                  className="w-[50px] h-[50px] rounded-full mx-auto "
+                />
+              </Link>
             </div>
             <div>
               {primaryTheme === "dark" ? (

@@ -24,7 +24,7 @@ export const sendMail = async (req: Request, res: Response) => {
         text: `This is the ${otp}.Hope You enjoy our Service.`
     }
 
-    transporter.sendMail(mailOptions, async function (err, info) {
+    await transporter.sendMail(mailOptions, async function (err, info) {
         if (err) {
             return res.status(404).json({ success: false, msg: "Error in sending mail" });
         } else {

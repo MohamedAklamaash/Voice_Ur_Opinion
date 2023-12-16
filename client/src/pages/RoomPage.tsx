@@ -1,9 +1,11 @@
-import React, { useEffect, useState,FC } from "react";
+import React, { useEffect, useState, FC } from "react";
 import { Theme } from "../App";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { socket } from "../sockets/socket";
+
 // get specific details of the room component
 type Props = {
   primaryTheme: Theme;
@@ -15,12 +17,16 @@ type Props = {
 //what if we create this as a dialog box?
 //need to add a green dialog to know that they are active
 //added fc don't know how that works
+//this is the component where all the main logic takes place
+//need to implement in search functionality with that .includes() method
 
-const RoomPage:FC<Props> = ({ primaryTheme }: Props) => {
+const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [roomData, setroomData] = useState({});
-  const { userName, email } = useSelector((state) => state.user);
+  const { userName, email, userProfileUrl } = useSelector(
+    (state) => state.user
+  );
   const [userAlreadyInRoom, setuserAlreadyInRoom] = useState<boolean>(false);
   const getRoomDetails = async () => {
     const {
@@ -36,7 +42,6 @@ const RoomPage:FC<Props> = ({ primaryTheme }: Props) => {
     await axios.put(`http://localhost:8001/room/leaveRoom/${id}`, {
       email,
     });
-    navigate("http://localhost:5173");
   };
 
   const joinRoom = async () => {
@@ -71,6 +76,14 @@ const RoomPage:FC<Props> = ({ primaryTheme }: Props) => {
       setuserAlreadyInRoom(true);
     }
   };
+
+  console.log(socket.emit("joinedUser", { userName, email }));
+
+  console.log(
+    socket.on("userJoined", (data) => {
+      console.log(data);
+    })
+  );
   return (
     <React.Fragment>
       <div className=" min-h-screen">
@@ -86,7 +99,11 @@ const RoomPage:FC<Props> = ({ primaryTheme }: Props) => {
                   deleteARoom();
                 }}
               >
-                Delete the Room{" "}
+                <Link
+                  to={`http://localhost:5173/home?userName=${userName}&?profileUrl=${userProfileUrl}`}
+                >
+                  Delete The Room{" "}
+                </Link>
               </button>
             </>
           ) : (
@@ -98,7 +115,11 @@ const RoomPage:FC<Props> = ({ primaryTheme }: Props) => {
                       leaveTheRoom();
                     }}
                   >
-                    Leave the Room
+                    <Link
+                      to={`http://localhost:5173/home?userName=${userName}&?profileUrl=${userProfileUrl}`}
+                    >
+                      Leave The Room{" "}
+                    </Link>
                   </span>
                 ) : (
                   <span
@@ -121,14 +142,11 @@ const RoomPage:FC<Props> = ({ primaryTheme }: Props) => {
           <h1 className=" font-bold text-3xl ">{roomData?.title}</h1>
         </main>
         <h1 className=" p-10 text-4xl font-bold">Speakers:</h1>
-        <main className=" p-10 flex items-center  ">
+        <main className=" p-10  grid grid-cols-4 max-md:grid-cols-2 max-sm:grid-cols-1  ">
           {roomData.speakers.map((speaker: string, index: number) => {
             return (
-              <div
-                key={index}
-                className=" grid grid-cols-4 max-md:grid-cols-2 max-sm:grid-cols-1"
-              >
-                <h1 className=" font-roboto text-2xl font-semibold text-primary-pink-500 ">
+              <div key={index} className="flex items-center">
+                <h1 className=" font-roboto text-2xl font-semibold text-primary-pink-500 mb-10  ">
                   {speaker}
                 </h1>
               </div>
