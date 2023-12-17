@@ -24,6 +24,8 @@ const io = new Server(server, {
 });
 
 io.on("connection", (socket: Socket) => {
+    console.log("User connected",socket.id);
+    
     socket.on("joinedUser", async (data) => {
         const { userName, email } = data;
         let checker: string = "userJoined";

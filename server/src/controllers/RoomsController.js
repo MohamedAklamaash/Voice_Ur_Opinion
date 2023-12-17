@@ -31,10 +31,19 @@ const getRoomDetails = async (req, res) => {
         if (!data) {
             return res.status(404).json({ success: false, msg: "No room found" });
         }
-        return res.status(201).json({ success: true, data });
+        let userData = [];
+        await Promise.all(data.speakers.map(async (name) => {
+            const user = await UserDataModel_1.UserSchema.findOne({ name });
+            // the users that aren't activated will be null
+            if (user != null) {
+                userData.push(user);
+            }
+        }));
+        return res.status(201).json({ success: true, data, userData });
     }
     catch (error) {
-        console.log("Error in getting room details");
+        console.log("Error in getting room details", error);
+        return res.status(500).json({ success: false, msg: "Internal server error" });
     }
 };
 exports.getRoomDetails = getRoomDetails;

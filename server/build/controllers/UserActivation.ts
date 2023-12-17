@@ -46,3 +46,16 @@ export const deactivateUser = async (req: Request, res: Response) => {
         console.log("error in deactivating the user");
     }
 }
+
+export const isUserActivated =async (req:Request,res:Response) => {
+    try {
+        const {email} = req.body;
+        const data = await UserSchema.findOne({email});
+        if(!data?.activated){
+            return res.status(404).json({success:false})
+        }
+        return res.status(201).json({success:true});
+    } catch (error) {
+        
+    }
+}

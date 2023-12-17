@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deactivateUser = exports.activateUser = void 0;
+exports.isUserActivated = exports.deactivateUser = exports.activateUser = void 0;
 const UserDataModel_1 = require("../models/UserDataModel");
 const activateUser = async (req, res) => {
     const { name, email, userProfileUrl } = req.body;
@@ -44,3 +44,16 @@ const deactivateUser = async (req, res) => {
     }
 };
 exports.deactivateUser = deactivateUser;
+const isUserActivated = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const data = await UserDataModel_1.UserSchema.findOne({ email });
+        if (!data?.activated) {
+            return res.status(404).json({ success: false });
+        }
+        return res.status(201).json({ success: true });
+    }
+    catch (error) {
+    }
+};
+exports.isUserActivated = isUserActivated;

@@ -1,10 +1,11 @@
-import React, { useEffect, useState, FC } from "react";
+import React, { useEffect, useState, FC, useCallback, useRef } from "react";
 import { Theme } from "../App";
 import { Link, useParams } from "react-router-dom";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { socket } from "../sockets/socket";
+import DummyLogo from "../assets/DummyLogo.jpeg";
 
 // get specific details of the room component
 type Props = {
@@ -21,22 +22,26 @@ type Props = {
 //need to implement in search functionality with that .includes() method
 
 const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
+  const speakerRef = useRef([]);
   const { id } = useParams();
-  const navigate = useNavigate();
   const [roomData, setroomData] = useState({});
+  const [userData, setuserData] = useState([]);
+  const navigate = useNavigate();
   const { userName, email, userProfileUrl } = useSelector(
     (state) => state.user
   );
+
   const [userAlreadyInRoom, setuserAlreadyInRoom] = useState<boolean>(false);
-  const getRoomDetails = async () => {
+  const getRoomDetails = useCallback(async () => {
     const {
-      data: { data },
+      data: { data, userData },
     } = await axios.get(`http://localhost:8001/room/getRoomDetails/${id}`);
     setroomData(data);
     if (data?.speakers.includes(userName)) {
       setuserAlreadyInRoom(true);
     }
-  };
+    setuserData(userData);
+  }, []);
 
   const leaveTheRoom = async () => {
     await axios.put(`http://localhost:8001/room/leaveRoom/${id}`, {
@@ -54,6 +59,7 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
   useEffect(() => {
     getRoomDetails();
   }, []);
+  console.log(userData);
 
   const deleteARoom = async () => {
     if (userName === roomData?.owner) {
@@ -77,16 +83,13 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
     }
   };
 
-  console.log(socket.emit("joinedUser", { userName, email }));
+  socket.emit("joinedUser", { userName, email });
 
-  console.log(
-    socket.on("userJoined", (data) => {
-      console.log(data);
-    })
-  );
+  socket.on("userJoined", (data) => {});
+
   return (
     <React.Fragment>
-      <div className=" min-h-screen">
+      <div className=" min-h-screen p-10 ">
         <div className=" relative mt-10 md:flex items-center justify-end gap-10 p-7 mb-10 ">
           {roomData?.owner === userName ? (
             <>
@@ -143,11 +146,25 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
         </main>
         <h1 className=" p-10 text-4xl font-bold">Speakers:</h1>
         <main className=" p-10  grid grid-cols-4 max-md:grid-cols-2 max-sm:grid-cols-1  ">
-          {roomData.speakers.map((speaker: string, index: number) => {
+          {userData.map((user, index) => {
             return (
-              <div key={index} className="flex items-center">
+              <div
+                key={index}
+                className="flex items-center flex-col justify-between "
+              >
+                <img
+                  src={user?.userProfileUrl || DummyLogo}
+                  alt="User Profile"
+                  className="rounded-full w-[100px] h-[100px] cursor-pointer p-4"
+                />
+                <audio
+                  autoPlay
+                  ref={(instance: HTMLAudioElement) => {}}
+                  controls
+                ></audio>
+                <button>{"Mute"}</button>
                 <h1 className=" font-roboto text-2xl font-semibold text-primary-pink-500 mb-10  ">
-                  {speaker}
+                  {user?.name.length > 10 ? user.name.split("") : user.name}
                 </h1>
               </div>
             );

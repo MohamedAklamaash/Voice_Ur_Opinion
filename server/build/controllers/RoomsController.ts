@@ -11,28 +11,48 @@ export const createARoom = async (req: Request, res: Response) => {
             return res.status(404).json({ success: false, msg: "Need data for resource authorization" });
         }
         const owner = await UserSchema.findOne({ email });
-        if(!owner){
-            return res.status(404).json({success:false,msg:"Email's user not Found",owner})
+        if (!owner) {
+            return res.status(404).json({ success: false, msg: "Email's user not Found", owner })
         }
         const data = await RoomSchema.create({
-            title, owner: owner?.name, roomType,speakers:[owner?.name]
+            title, owner: owner?.name, roomType, speakers: [owner?.name]
         });
         return res.status(200).json({ success: true, msg: "Room created successfully", data });
     } catch (error) {
         console.log("Error in creating the room");
     }
 }
+type User = {
+    name?: string;
+    activated?: boolean;
+    email?: string;
+    phoneNumber?: string;
+    userProfileUrl?: string;
+}
 
 export const getRoomDetails = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const data = await RoomSchema.findById(id);
+
         if (!data) {
             return res.status(404).json({ success: false, msg: "No room found" });
         }
-        return res.status(201).json({ success: true, data });
+
+        let userData: Array<User> = [];
+
+        await Promise.all(data.speakers.map(async (name) => {
+            const user: User = await UserSchema.findOne({ name });
+            // the users that aren't activated will be null
+            if(user!=null){
+                userData.push(user);
+            }
+        }));
+
+        return res.status(201).json({ success: true, data, userData });
     } catch (error) {
-        console.log("Error in getting room details");
+        console.log("Error in getting room details", error);
+        return res.status(500).json({ success: false, msg: "Internal server error" });
     }
 }
 //need to show only public rooms
