@@ -14,6 +14,8 @@ type Props = {
 
 // get all public rooms and display it in the Main Home Page
 
+//need to implement searching option in the main home component
+
 const MainHome = ({ primaryTheme }: Props) => {
   const [searchVoiceRooms, setsearchVoiceRooms] = useState<string>("");
   const [showModal, setshowModal] = useState<boolean>(false);
@@ -22,7 +24,7 @@ const MainHome = ({ primaryTheme }: Props) => {
   const { userName, phoneNumber, email, userProfileUrl } = useSelector(
     (state) => state.user
   );
-
+  
   const activateUser = async () => {
     const { data } = await axios.post(
       `http://localhost:8001/userActivation/activateUser`,
@@ -41,7 +43,7 @@ const MainHome = ({ primaryTheme }: Props) => {
     } = await axios.get(`http://localhost:8001/room/getAllRooms`);
     setpublicRooms(data);
   };
-  
+
   useEffect(() => {
     getAllPublicRooms();
   }, []);

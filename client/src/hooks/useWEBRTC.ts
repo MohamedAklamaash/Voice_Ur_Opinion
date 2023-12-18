@@ -10,14 +10,17 @@ export const useWEBRTC = async()=>{
         localMediaStream.current = await navigator.mediaDevices.getUserMedia({
             audio:true
         })
+        console.log(localMediaStream.current);
     }
 
     async function chatInit(){
         const localSocket = socket;
-
+        
     }
 
     function muteClient(instance:HTMLAudioElement,clientId:string){
 
     }
+
+    return {capturemedia};
 }
