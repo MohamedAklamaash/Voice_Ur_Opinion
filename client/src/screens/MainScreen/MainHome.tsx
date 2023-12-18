@@ -24,7 +24,7 @@ const MainHome = ({ primaryTheme }: Props) => {
   const { userName, phoneNumber, email, userProfileUrl } = useSelector(
     (state) => state.user
   );
-  
+
   const activateUser = async () => {
     const { data } = await axios.post(
       `http://localhost:8001/userActivation/activateUser`,
@@ -35,7 +35,6 @@ const MainHome = ({ primaryTheme }: Props) => {
         phoneNumber,
       }
     );
-    console.log(data);
   };
   const getAllPublicRooms = async () => {
     const {
@@ -50,6 +49,18 @@ const MainHome = ({ primaryTheme }: Props) => {
   useEffect(() => {
     activateUser();
   }, []);
+
+  useEffect(() => {
+    if (searchVoiceRooms === "") {
+      getAllPublicRooms();
+    } else {
+      const filteredData = publicRooms.filter((pub) =>
+        pub.title.includes(searchVoiceRooms)
+      );
+      setpublicRooms(filteredData);      
+    }
+  }, [searchVoiceRooms]);
+
   return (
     <div className=" min-h-screen mt-2">
       <section className=" md:flex items-center justify-around p-2 ">

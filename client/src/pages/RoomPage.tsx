@@ -3,9 +3,10 @@ import { Theme } from "../App";
 import { Link, useParams } from "react-router-dom";
 import axios from "axios";
 import { useSelector } from "react-redux";
-import MicIcon from "@mui/icons-material/Mic";
-import MicOffIcon from "@mui/icons-material/Mic";
+import MicOutlinedIcon from "@mui/icons-material/MicOutlined";
+import MicOffIcon from "@mui/icons-material/MicOff";
 import DummyLogo from "../assets/DummyLogo.jpeg";
+import { Icon } from "@mui/material";
 
 interface Props {
   primaryTheme: Theme;
@@ -179,7 +180,7 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
                 className="bg-blue-600 text-lg font-poppins rounded-full mt-2 mb-2 px-7 py-3"
                 onClick={() => toggleMute(user?.name)}
               >
-                {isUserMuted[user?.name] === true ? "UnMute" : "Mute"}
+                {isUserMuted[user?.name] === true ? <Icon component={MicOffIcon}/> : <Icon component={MicOutlinedIcon}/>}
               </button>
               <h1 className="font-roboto text-2xl font-semibold text-primary-pink-500 mb-10">
                 {user?.name.length > 10 ? user.name.split("") : user.name}
