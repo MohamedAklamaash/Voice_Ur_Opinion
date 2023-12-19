@@ -16,6 +16,7 @@ const node_http_1 = require("node:http");
 const socket_io_1 = require("socket.io");
 const Room_Routes_1 = __importDefault(require("./routes/Room_Routes"));
 const ActivationRoutes_1 = __importDefault(require("./routes/ActivationRoutes"));
+const SocketActions_1 = require("./actions/SocketActions");
 (0, mongoConnection_1.mongoConnection)();
 const server = (0, node_http_1.createServer)(app);
 const io = new socket_io_1.Server(server, {
@@ -24,14 +25,6 @@ const io = new socket_io_1.Server(server, {
         credentials: true,
         methods: ["GET", "POST", "PUT", "DELETE"]
     }
-});
-io.on("connection", (socket) => {
-    console.log("User connected", socket.id);
-    socket.on("joinedUser", async (data) => {
-        const { userName, email } = data;
-        let checker = "userJoined";
-        socket.emit("userJoined", checker);
-    });
 });
 app.use((0, cors_1.default)());
 app.use((0, morgan_1.default)("tiny"));
@@ -42,6 +35,79 @@ app.use(express_1.default.urlencoded({ extended: false }));
 app.use("/Otp", Otp_routes_1.default);
 app.use("/room", Room_Routes_1.default);
 app.use("/userActivation", ActivationRoutes_1.default);
+const socketUserMap = {};
+io.on("connection", (socket) => {
+    console.log("User connected", socket.id);
+    socket.on(SocketActions_1.socketActions.JOIN, async (data) => {
+        const { user, roomId } = data;
+        // destructure the user object to access the data from the obj
+        socketUserMap[socket.id] = user;
+        const speakers = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
+        speakers.forEach((userId) => {
+            io.to(userId).emit(SocketActions_1.socketActions.ADD_PEER, {
+                peerId: userId,
+                createOffer: false,
+                user
+            });
+            socket.emit(SocketActions_1.socketActions.ADD_PEER, {
+                peerId: userId,
+                user,
+                createOffer: true
+            });
+        });
+        socket.join(roomId);
+    });
+    socket.on(SocketActions_1.socketActions.RELAY_ICE, (data) => {
+        const { peerId, iceCandidate } = data;
+        io.to(peerId).emit(SocketActions_1.socketActions.ICE_CANDIDATE, {
+            peerId: socket.id,
+            iceCandidate
+        });
+    });
+    socket.on(SocketActions_1.socketActions.RELAY_SDP, (data) => {
+        const { peerId, sessionDescription } = data;
+        io.to(peerId).emit(SocketActions_1.socketActions.SESSION_DESCRIPTION, {
+            sessionDescription,
+            peerId: socket.id
+        });
+    });
+    socket.on(SocketActions_1.socketActions.MUTE, (data) => {
+        const { userId, roomId } = data;
+        const clients = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
+        clients.forEach((clientId) => {
+            io.to(clientId).emit(SocketActions_1.socketActions.MUTE, {
+                peerId: socket.id,
+                userId
+            });
+        });
+    });
+    socket.on(SocketActions_1.socketActions.UNMUTE, (data) => {
+        const { userId, roomId } = data;
+        const clients = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
+        clients.forEach((clientId) => {
+            io.to(clientId).emit(SocketActions_1.socketActions.UNMUTE, {
+                peerId: socket.id,
+                userId
+            });
+        });
+    });
+    const leaveRoom = () => {
+        const { rooms } = socket;
+        Array.from(rooms).forEach((roomId) => {
+            const clients = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
+            clients.forEach((clientId) => {
+                io.to(clientId).emit(SocketActions_1.socketActions.REMOVE_PEER, {
+                    peerId: clientId,
+                    userId: socketUserMap[socket.id]?._id
+                });
+            });
+            socket.leave(roomId);
+        });
+        delete socketUserMap[socket.id];
+    };
+    socket.on(SocketActions_1.socketActions.LEAVE, leaveRoom);
+    socket.on("disconnecting", leaveRoom);
+});
 server.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`);
 });

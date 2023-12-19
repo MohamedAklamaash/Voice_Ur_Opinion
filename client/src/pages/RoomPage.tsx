@@ -1,4 +1,4 @@
-import React, { useEffect, useState, FC, useCallback } from "react";
+import React, { useEffect, useState, FC, useCallback, useRef } from "react";
 import { Theme } from "../App";
 import { Link, useParams } from "react-router-dom";
 import axios from "axios";
@@ -7,13 +7,11 @@ import MicOutlinedIcon from "@mui/icons-material/MicOutlined";
 import MicOffIcon from "@mui/icons-material/MicOff";
 import DummyLogo from "../assets/DummyLogo.jpeg";
 import { Icon } from "@mui/material";
-
+import { useWEBRTC } from "../hooks/useWEBRTC";
+import { socket } from "../sockets/socket";
+import { socketActions } from "../constants/Actions";
 interface Props {
   primaryTheme: Theme;
-}
-
-interface RouteParams {
-  id: string;
 }
 
 interface RoomData {
@@ -28,13 +26,17 @@ interface User {
 }
 
 const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
-  const { id } = useParams<RouteParams>();
+  const { id } = useParams<string>();
   const [roomData, setRoomData] = useState<RoomData>({
     owner: "",
     title: "",
     speakers: [],
   });
+
+  const { capturemedia, muteClient, provideRef } = useWEBRTC();
+
   const [userData, setUserData] = useState<User[]>([]);
+  const userRoomDetails = useRef({});
   const [userAlreadyInRoom, setUserAlreadyInRoom] = useState<boolean>(false);
   const [isUserMuted, setIsUserMuted] = useState<Record<string, boolean>>({});
   const { userName, email, userProfileUrl } = useSelector(
@@ -52,12 +54,11 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
       setRoomData(data);
       setUserAlreadyInRoom(data.speakers.includes(userName));
       setUserData(userData);
-
       const storedIsUserMuted = sessionStorage.getItem("isUserMuted");
       const initialMuteState: Record<string, boolean> = storedIsUserMuted
         ? JSON.parse(storedIsUserMuted)
         : {};
-
+      //await capturemedia();
       data.speakers.forEach((usr: string) => {
         initialMuteState[usr] = initialMuteState[usr] || false;
       });
@@ -94,6 +95,10 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
     getRoomDetails();
   }, []);
 
+  useEffect(()=>{
+    userRoomDetails.current = userData;
+  },[userData]);
+
   useEffect(() => {
     sessionStorage.setItem("isUserMuted", JSON.stringify(isUserMuted));
   }, [isUserMuted]);
@@ -108,7 +113,7 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
     }
   }, [userName, roomData, id]);
 
-  const toggleMute = (targetUserName?: string) => {
+  const toggleMute = (targetUserName?: any) => {
     if (userName === roomData.owner || userName === targetUserName) {
       setIsUserMuted((prevIsUserMuted) => {
         const updatedState = {
@@ -166,27 +171,51 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
         </main>
         <h1 className=" p-10 text-4xl font-bold">Speakers:</h1>{" "}
         <main className="p-10 grid grid-cols-4 max-md:grid-cols-2 max-sm:grid-cols-1">
-          {userData.map((user, index) => (
-            <div
-              key={index}
-              className="flex items-center flex-col justify-between"
-            >
-              <img
-                src={user?.userProfileUrl || DummyLogo}
-                alt="User Profile"
-                className="rounded-full w-[100px] h-[100px] cursor-pointer p-4"
-              />
-              <button
-                className="bg-blue-600 text-lg font-poppins rounded-full mt-2 mb-2 px-7 py-3"
-                onClick={() => toggleMute(user?.name)}
+          {userData.map((user, index) => {
+            socket.emit(socketActions.JOIN,{
+              user,
+              id
+            })
+            socket.on(socketActions.ADD_PEER,(data)=>{
+              console.log(data);
+            })
+            return (
+              <div
+                key={index}
+                className="flex items-center flex-col justify-between"
               >
-                {isUserMuted[user?.name] === true ? <Icon component={MicOffIcon}/> : <Icon component={MicOutlinedIcon}/>}
-              </button>
-              <h1 className="font-roboto text-2xl font-semibold text-primary-pink-500 mb-10">
-                {user?.name.length > 10 ? user.name.split("") : user.name}
-              </h1>
-            </div>
-          ))}
+                <img
+                  src={user?.userProfileUrl || DummyLogo}
+                  alt="User Profile"
+                  className="rounded-full w-[100px] h-[100px] cursor-pointer p-4"
+                />
+                <audio
+                  autoPlay
+                  muted={isUserMuted[user?.name]}
+                  ref={(instance: HTMLAudioElement) => {
+                    provideRef({
+                      audioInstance: instance,
+                      clientId: user?._id,
+                    });
+                  }}
+                  controls
+                ></audio>
+                <button
+                  className="bg-blue-600 text-lg font-poppins rounded-full mt-2 mb-2 px-7 py-3"
+                  onClick={() => toggleMute(user?.name)}
+                >
+                  {isUserMuted[user?.name] === true ? (
+                    <Icon component={MicOffIcon} />
+                  ) : (
+                    <Icon component={MicOutlinedIcon} />
+                  )}
+                </button>
+                <h1 className="font-roboto text-2xl font-semibold text-primary-pink-500 mb-10">
+                  {user?.name.length > 10 ? user.name.split("") : user.name}
+                </h1>
+              </div>
+            );
+          })}
         </main>
       </div>
     </React.Fragment>
