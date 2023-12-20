@@ -47,8 +47,9 @@ io.on("connection", (socket: Socket) => {
         socketUserMap[socket.id] = user;
         
         const speakers = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
-
+        // same socket id is assigned to different users,don't know why??
         speakers.forEach((userId) => {
+            // the user cannot create a offer from himself
             io.to(userId).emit(socketActions.ADD_PEER, {
                 peerId: userId,
                 createOffer: false,

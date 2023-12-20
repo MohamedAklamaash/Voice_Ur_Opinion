@@ -45,6 +45,8 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
     }) => state.user
   );
 
+  const activeUsers = useRef({});
+
   const getRoomDetails = useCallback(async () => {
     try {
       const response = await axios.get<{ data: RoomData; userData: User[] }>(
@@ -95,13 +97,9 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
     getRoomDetails();
   }, []);
 
-  useEffect(()=>{
-    userRoomDetails.current = userData;
-  },[userData]);
-
   useEffect(() => {
-    sessionStorage.setItem("isUserMuted", JSON.stringify(isUserMuted));
-  }, [isUserMuted]);
+    userRoomDetails.current = userData;
+  }, [userData]);
 
   const deleteARoom = useCallback(async () => {
     try {
@@ -151,6 +149,9 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
                 {userAlreadyInRoom === true ? (
                   <span onClick={leaveTheRoom}>
                     <Link
+                      onClick={() => {
+                        socket.emit(socketActions.LEAVE);
+                      }}
                       to={`http://localhost:5173/home?userName=${userName}&?profileUrl=${userProfileUrl}`}
                     >
                       Leave The Room{" "}
@@ -172,13 +173,18 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
         <h1 className=" p-10 text-4xl font-bold">Speakers:</h1>{" "}
         <main className="p-10 grid grid-cols-4 max-md:grid-cols-2 max-sm:grid-cols-1">
           {userData.map((user, index) => {
-            socket.emit(socketActions.JOIN,{
+            socket.emit(socketActions.JOIN, {
               user,
-              id
-            })
-            socket.on(socketActions.ADD_PEER,(data)=>{
-              console.log(data);
-            })
+              id,
+            });
+            socket.on(socketActions.ADD_PEER, (data) => {
+              activeUsers.current[data?.peerId] = {
+                createOffer: data?.createOffer,
+                userData: data?.user,
+              };
+            });
+            console.log("activeUsers:",activeUsers);
+
             return (
               <div
                 key={index}
