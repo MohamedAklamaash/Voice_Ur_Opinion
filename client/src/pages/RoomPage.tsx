@@ -100,7 +100,8 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
   useEffect(() => {
     userRoomDetails.current = userData;
   }, [userData]);
-
+  console.log(userRoomDetails);
+  
   const deleteARoom = useCallback(async () => {
     try {
       if (userName === roomData.owner) {
@@ -183,7 +184,6 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
                 userData: data?.user,
               };
             });
-            console.log("activeUsers:",activeUsers);
 
             return (
               <div
@@ -208,7 +208,8 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
                 ></audio>
                 <button
                   className="bg-blue-600 text-lg font-poppins rounded-full mt-2 mb-2 px-7 py-3"
-                  onClick={() => toggleMute(user?.name)}
+                  onClick={() => 
+                    toggleMute(user?.name)}
                 >
                   {isUserMuted[user?.name] === true ? (
                     <Icon component={MicOffIcon} />
