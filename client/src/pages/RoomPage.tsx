@@ -100,8 +100,7 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
   useEffect(() => {
     userRoomDetails.current = userData;
   }, [userData]);
-  console.log(userRoomDetails);
-  
+
   const deleteARoom = useCallback(async () => {
     try {
       if (userName === roomData.owner) {
@@ -112,17 +111,38 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
     }
   }, [userName, roomData, id]);
 
-  const toggleMute = (targetUserName?: any) => {
-    if (userName === roomData.owner || userName === targetUserName) {
+  const toggleMute = (user?: User) => {
+    if (userName === roomData.owner || userName === user?.name) {
       setIsUserMuted((prevIsUserMuted) => {
         const updatedState = {
           ...prevIsUserMuted,
-          [targetUserName]: !prevIsUserMuted[targetUserName],
+          [user?.name]: !prevIsUserMuted[user?.name],
         };
+        
+        socket.emit(socketActions.MUTE_INFO, {
+          userId: user?._id,
+          roomId: id,
+          isMute: updatedState[user?.name],
+        });
+        socket.on(socketActions.MUTE_INFO, (data) => {
+          console.log(data);
+        });
         return updatedState;
       });
     }
   };
+
+  // useEffect(() => {
+  //   toggleMute();
+  //   // socket needs to take the emitted data from the server and re-render the state here
+  //   socket.on(socketActions.MUTE_INFO, (data) => {
+  //     const { userId, isMute } = data;
+  //     isUserMuted[userId] = isMute;
+  //   });
+  //   return () => {
+  //     socket.off(socketActions.MUTE_INFO);
+  //   };
+  // }, [toggleMute]);
 
   return (
     <React.Fragment>
@@ -208,8 +228,7 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
                 ></audio>
                 <button
                   className="bg-blue-600 text-lg font-poppins rounded-full mt-2 mb-2 px-7 py-3"
-                  onClick={() => 
-                    toggleMute(user?.name)}
+                  onClick={() => toggleMute(user)}
                 >
                   {isUserMuted[user?.name] === true ? (
                     <Icon component={MicOffIcon} />

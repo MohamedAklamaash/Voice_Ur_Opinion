@@ -45,7 +45,7 @@ io.on("connection", (socket) => {
         const speakers = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
         // same socket id is assigned to different users,don't know why??
         speakers.forEach((userId) => {
-            // the user cannot create a offer from himselves
+            // the user cannot create a offer from himself
             io.to(userId).emit(SocketActions_1.socketActions.ADD_PEER, {
                 peerId: userId,
                 createOffer: false,
@@ -91,6 +91,18 @@ io.on("connection", (socket) => {
                 peerId: socket.id,
                 userId
             });
+        });
+    });
+    socket.on(SocketActions_1.socketActions.MUTE_INFO, ({ userId, roomId, isMute }) => {
+        const clients = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
+        clients.forEach((clientId) => {
+            if (clientId !== socket.id) {
+                console.log('mute info');
+                io.to(clientId).emit(SocketActions_1.socketActions.MUTE_INFO, {
+                    userId,
+                    isMute,
+                });
+            }
         });
     });
     const leaveRoom = () => {

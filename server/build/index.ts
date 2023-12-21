@@ -40,12 +40,12 @@ const socketUserMap = {};
 
 io.on("connection", (socket: Socket) => {
     console.log("User connected", socket.id);
-    
+
     socket.on(socketActions.JOIN, async (data) => {
         const { user, roomId } = data;
         // destructure the user object to access the data from the obj
         socketUserMap[socket.id] = user;
-        
+
         const speakers = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
         // same socket id is assigned to different users,don't know why??
         speakers.forEach((userId) => {
@@ -63,7 +63,7 @@ io.on("connection", (socket: Socket) => {
             })
         })
         socket.join(roomId);
-        
+
     })
 
     socket.on(socketActions.RELAY_ICE, (data) => {
@@ -105,6 +105,29 @@ io.on("connection", (socket: Socket) => {
         })
     })
 
+    socket.on(socketActions.MUTE_INFO, ({ userId, roomId, isMute }) => {
+        const clients = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
+        clients.forEach((clientId) => {
+            if (clientId !== socket.id) {
+                console.log('mute info');
+                io.to(clientId).emit(socketActions.MUTE_INFO, {
+                    userId,
+                    isMute,
+                });
+                console.log(io.to(clientId).emit(socketActions.MUTE_INFO, {
+                    userId,
+                    isMute,
+                }));
+
+                socket.emit(socketActions.MUTE_INFO, {
+                    userId,
+                    isMute
+                })
+            }
+        });
+    })
+    
+
     const leaveRoom = () => {
         const { rooms } = socket;
         Array.from(rooms).forEach((roomId) => {
@@ -121,9 +144,9 @@ io.on("connection", (socket: Socket) => {
         delete socketUserMap[socket.id];
     }
 
-    socket.on(socketActions.LEAVE,leaveRoom);
+    socket.on(socketActions.LEAVE, leaveRoom);
 
-    socket.on("disconnecting",leaveRoom);
+    socket.on("disconnecting", leaveRoom);
 
 })
 

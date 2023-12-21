@@ -25,7 +25,7 @@ const sendMail = async (req, res) => {
         from: `${process.env.SENDER_EMAIL}`,
         to: `${email}`,
         subject: "Use This OTP to sign-in to Voice Your Opinion",
-        text: `This is the ${otp}.Hope You enjoy our Service.`
+        text: `This is the ${otp} to Voice Your Opinion.Hope You enjoy our Service.`
     };
     await transporter.sendMail(mailOptions, async function (err, info) {
         if (err) {
