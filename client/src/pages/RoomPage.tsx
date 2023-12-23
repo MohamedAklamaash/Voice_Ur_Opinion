@@ -47,6 +47,9 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
 
   const { captureMedia } = useWebRtc();
 
+  const [audioStream, setaudioStream] = useState([]);
+  const audioRef = useRef();
+  socket.emit("room", userData);
   const getRoomDetails = useCallback(async () => {
     try {
       const response = await axios.get<{ data: RoomData; userData: User[] }>(
@@ -83,10 +86,14 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
 
   const joinRoom = async () => {
     try {
-      await axios.put(`http://localhost:8001/room/joinRoom/${id}`, {
+      const {
+        data: { userData },
+      } = await axios.put(`http://localhost:8001/room/joinRoom/${id}`, {
         email,
       });
-      window.location.reload();
+      socket.emit(socketActions.JOIN, { roomId: id, user: userData });
+
+      //window.location.reload();
     } catch (error) {
       console.error("Error joining the room:", error);
     }
@@ -118,18 +125,29 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
           [user?.name]: !prevIsUserMuted[user?.name],
         };
 
-        socket.emit(socketActions.MUTE_INFO, {
-          userId: user?._id,
-          roomId: id,
-          isMute: updatedState[user?.name],
-        });
-        socket.on(socketActions.MUTE_INFO, (data) => {
-          console.log(data);
-        });
         return updatedState;
       });
     }
   };
+
+  const newUserJoinded = useCallback(({ user }: { user: User }) => {
+    console.log(user);
+  }, []);
+
+  const existingUserLeftTheRoom = useCallback(
+    ({ users }: { users: User[] }) => {
+      console.log(users);
+    },
+    []
+  );
+
+  useEffect(() => {
+    socket.on(socketActions.JOIN, newUserJoinded);
+    socket.on(socketActions.LEAVE, existingUserLeftTheRoom);
+    return () => {
+      socket.off(socketActions.JOIN, newUserJoinded);
+    };
+  }, [joinRoom, socket, existingUserLeftTheRoom]);
 
   return (
     <>
@@ -157,9 +175,7 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
                 {userAlreadyInRoom === true ? (
                   <span onClick={leaveTheRoom}>
                     <Link
-                      onClick={() => {
-                        socket.emit(socketActions.LEAVE);
-                      }}
+                      onClick={() => {}}
                       to={`http://localhost:5173/home?userName=${userName}&?profileUrl=${userProfileUrl}`}
                     >
                       Leave The Room{" "}
@@ -181,10 +197,6 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
         <h1 className=" p-10 text-4xl font-bold">Speakers:</h1>{" "}
         <main className="p-10 grid grid-cols-4 max-md:grid-cols-2 max-sm:grid-cols-1">
           {userData.map((user, index) => {
-            socket.emit(socketActions.JOIN, {
-              user,
-              id,
-            });
             return (
               <div
                 key={index}

@@ -20,7 +20,7 @@ export const joinRoom = async (req: Request, res: Response) => {
         if (!roomData.speakers.includes(userData.name)) {
             await roomData.updateOne({ $push: { speakers: userData.name } });
             await roomData.save();
-            return res.status(201).json({ success: true, msg: "User joined Room successfully" });
+            return res.status(201).json({ success: true, msg: "User joined Room successfully",userData });
         }
         else {
             return res.status(301).json({ success: false, msg: "User already exists in the Room" });

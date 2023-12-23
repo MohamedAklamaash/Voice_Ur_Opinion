@@ -37,90 +37,38 @@ app.use("/room", Room_Routes_1.default);
 app.use("/userActivation", ActivationRoutes_1.default);
 const socketUserMap = {};
 io.on("connection", (socket) => {
-    console.log("User connected", socket.id);
-    socket.on(SocketActions_1.socketActions.JOIN, async (data) => {
-        const { user, roomId } = data;
-        // destructure the user object to access the data from the obj
-        socketUserMap[socket.id] = user;
-        const speakers = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
-        // same socket id is assigned to different users,don't know why??
-        speakers.forEach((userId) => {
-            // the user cannot create a offer from himself
-            io.to(userId).emit(SocketActions_1.socketActions.ADD_PEER, {
-                peerId: userId,
-                createOffer: false,
-                user
-            });
-            socket.emit(SocketActions_1.socketActions.ADD_PEER, {
-                peerId: userId,
-                user,
-                createOffer: true
-            });
-        });
+    socket.on("connect", () => {
+        console.log("User connected", socket.id);
+    });
+    socket.on(SocketActions_1.socketActions.JOIN, (data) => {
+        const { roomId, user } = data;
+        // Check if the roomId already exists in socketUserMap
+        if (!socketUserMap[roomId]) {
+            socketUserMap[roomId] = [];
+        }
+        // Add the user to the array for the specified roomId
+        socketUserMap[roomId].push(user);
+        // Emit the JOIN event to all users in the roomId
+        io.to(roomId).emit(SocketActions_1.socketActions.JOIN, { user });
+        // Join the socket room for the specified roomId
         socket.join(roomId);
+        // Emit the JOIN event to the current user
+        io.to(socket.id).emit(SocketActions_1.socketActions.JOIN, { user });
     });
-    socket.on(SocketActions_1.socketActions.RELAY_ICE, (data) => {
-        const { peerId, iceCandidate } = data;
-        io.to(peerId).emit(SocketActions_1.socketActions.ICE_CANDIDATE, {
-            peerId: socket.id,
-            iceCandidate
-        });
+    socket.on(SocketActions_1.socketActions.LEAVE, ({ user, roomId }) => {
+        // Use the filter method correctly and update socketUserMap[roomId]
+        socketUserMap[roomId] = socketUserMap[roomId].filter((data) => data.email !== user.email);
+        // Emit the LEAVE event to all users in the roomId
+        io.to(roomId).emit(SocketActions_1.socketActions.LEAVE, { users: socketUserMap });
+        // Join the socket room for the specified roomId (is this intentional?)
+        socket.join(roomId);
+        // Emit the LEAVE event to the current user
+        io.to(socket.id).emit(SocketActions_1.socketActions.LEAVE, { users: socketUserMap });
+        console.log(user.name + ":Left the Room");
     });
-    socket.on(SocketActions_1.socketActions.RELAY_SDP, (data) => {
-        const { peerId, sessionDescription } = data;
-        io.to(peerId).emit(SocketActions_1.socketActions.SESSION_DESCRIPTION, {
-            sessionDescription,
-            peerId: socket.id
-        });
+    socket.on("disconnect", () => {
+        console.log("User disconnected!");
     });
-    socket.on(SocketActions_1.socketActions.MUTE, (data) => {
-        const { userId, roomId } = data;
-        const clients = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
-        clients.forEach((clientId) => {
-            io.to(clientId).emit(SocketActions_1.socketActions.MUTE, {
-                peerId: socket.id,
-                userId
-            });
-        });
-    });
-    socket.on(SocketActions_1.socketActions.UNMUTE, (data) => {
-        const { userId, roomId } = data;
-        const clients = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
-        clients.forEach((clientId) => {
-            io.to(clientId).emit(SocketActions_1.socketActions.UNMUTE, {
-                peerId: socket.id,
-                userId
-            });
-        });
-    });
-    socket.on(SocketActions_1.socketActions.MUTE_INFO, ({ userId, roomId, isMute }) => {
-        const clients = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
-        clients.forEach((clientId) => {
-            if (clientId !== socket.id) {
-                console.log('mute info');
-                io.to(clientId).emit(SocketActions_1.socketActions.MUTE_INFO, {
-                    userId,
-                    isMute,
-                });
-            }
-        });
-    });
-    const leaveRoom = () => {
-        const { rooms } = socket;
-        Array.from(rooms).forEach((roomId) => {
-            const clients = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
-            clients.forEach((clientId) => {
-                io.to(clientId).emit(SocketActions_1.socketActions.REMOVE_PEER, {
-                    peerId: clientId,
-                    userId: socketUserMap[socket.id]?._id
-                });
-            });
-            socket.leave(roomId);
-        });
-        delete socketUserMap[socket.id];
-    };
-    socket.on(SocketActions_1.socketActions.LEAVE, leaveRoom);
-    socket.on("disconnecting", leaveRoom);
 });
 server.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`);
