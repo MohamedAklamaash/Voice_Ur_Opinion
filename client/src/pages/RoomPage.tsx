@@ -1,4 +1,4 @@
-import React, { useEffect, useState, FC, useCallback, useRef } from "react";
+import { useEffect, useState, FC, useCallback, useRef } from "react";
 import { Theme } from "../App";
 import { Link, useParams } from "react-router-dom";
 import axios from "axios";
@@ -7,9 +7,10 @@ import MicOutlinedIcon from "@mui/icons-material/MicOutlined";
 import MicOffIcon from "@mui/icons-material/MicOff";
 import DummyLogo from "../assets/DummyLogo.jpeg";
 import { Icon } from "@mui/material";
-import { useWEBRTC } from "../hooks/useWEBRTC";
 import { socket } from "../sockets/socket";
 import { socketActions } from "../constants/Actions";
+import { useWebRtc } from "../hooks/useWEBRTC";
+
 interface Props {
   primaryTheme: Theme;
 }
@@ -23,20 +24,19 @@ interface RoomData {
 interface User {
   name: string;
   userProfileUrl?: string;
+  _id?: string; // Add an optional _id property
 }
 
 const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
-  const { id } = useParams<string>();
+  const { id } = useParams<{ id: string }>(); // Specify the type for useParams
   const [roomData, setRoomData] = useState<RoomData>({
     owner: "",
     title: "",
     speakers: [],
   });
 
-  const { capturemedia, muteClient, provideRef } = useWEBRTC();
-
   const [userData, setUserData] = useState<User[]>([]);
-  const userRoomDetails = useRef({});
+  const userRoomDetails = useRef<Record<string, unknown>>({}); // Specify the type for useRef
   const [userAlreadyInRoom, setUserAlreadyInRoom] = useState<boolean>(false);
   const [isUserMuted, setIsUserMuted] = useState<Record<string, boolean>>({});
   const { userName, email, userProfileUrl } = useSelector(
@@ -45,7 +45,7 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
     }) => state.user
   );
 
-  const activeUsers = useRef({});
+  const { captureMedia } = useWebRtc();
 
   const getRoomDetails = useCallback(async () => {
     try {
@@ -60,7 +60,6 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
       const initialMuteState: Record<string, boolean> = storedIsUserMuted
         ? JSON.parse(storedIsUserMuted)
         : {};
-      //await capturemedia();
       data.speakers.forEach((usr: string) => {
         initialMuteState[usr] = initialMuteState[usr] || false;
       });
@@ -95,7 +94,7 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
 
   useEffect(() => {
     getRoomDetails();
-  }, []);
+  }, [getRoomDetails]);
 
   useEffect(() => {
     userRoomDetails.current = userData;
@@ -118,7 +117,7 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
           ...prevIsUserMuted,
           [user?.name]: !prevIsUserMuted[user?.name],
         };
-        
+
         socket.emit(socketActions.MUTE_INFO, {
           userId: user?._id,
           roomId: id,
@@ -132,20 +131,8 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
     }
   };
 
-  // useEffect(() => {
-  //   toggleMute();
-  //   // socket needs to take the emitted data from the server and re-render the state here
-  //   socket.on(socketActions.MUTE_INFO, (data) => {
-  //     const { userId, isMute } = data;
-  //     isUserMuted[userId] = isMute;
-  //   });
-  //   return () => {
-  //     socket.off(socketActions.MUTE_INFO);
-  //   };
-  // }, [toggleMute]);
-
   return (
-    <React.Fragment>
+    <>
       <div className="min-h-screen p-10">
         <div className=" relative mt-10 md:flex items-center justify-end gap-10 p-7 mb-10 ">
           {roomData?.owner === userName ? (
@@ -198,13 +185,6 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
               user,
               id,
             });
-            socket.on(socketActions.ADD_PEER, (data) => {
-              activeUsers.current[data?.peerId] = {
-                createOffer: data?.createOffer,
-                userData: data?.user,
-              };
-            });
-
             return (
               <div
                 key={index}
@@ -218,11 +198,8 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
                 <audio
                   autoPlay
                   muted={isUserMuted[user?.name]}
-                  ref={(instance: HTMLAudioElement) => {
-                    provideRef({
-                      audioInstance: instance,
-                      clientId: user?._id,
-                    });
+                  ref={(instance: HTMLAudioElement | null) => {
+                    // Specify the type for ref instance
                   }}
                   controls
                 ></audio>
@@ -244,7 +221,7 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
           })}
         </main>
       </div>
-    </React.Fragment>
+    </>
   );
 };
 
