@@ -132,11 +132,13 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
 
   const newUserJoinded = useCallback(({ user }: { user: User }) => {
     console.log(user);
+    setUserData((prev) => [...prev, user]);
   }, []);
 
   const existingUserLeftTheRoom = useCallback(
     ({ users }: { users: User[] }) => {
       console.log(users);
+      setUserData(users);
     },
     []
   );
