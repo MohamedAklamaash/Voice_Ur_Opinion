@@ -58,6 +58,7 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
       const { data, userData } = response.data;
       setRoomData(data);
       setUserAlreadyInRoom(data.speakers.includes(userName));
+      socket.emit(socketActions.ADD_PEER, { users: userData, roomId: id });
       setUserData(userData);
       const storedIsUserMuted = sessionStorage.getItem("isUserMuted");
       const initialMuteState: Record<string, boolean> = storedIsUserMuted
@@ -75,9 +76,12 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
 
   const leaveTheRoom = async () => {
     try {
-      await axios.put(`http://localhost:8001/room/leaveRoom/${id}`, {
+      const {
+        data: { userData },
+      } = await axios.put(`http://localhost:8001/room/leaveRoom/${id}`, {
         email,
       });
+      socket.emit(socketActions.LEAVE, { user: userData, roomId: id });
       window.location.href = `http://localhost:5173/home?userName=${userName}&?profileUrl=${userProfileUrl}`;
     } catch (error) {
       console.error("Error leaving the room:", error);

@@ -20,7 +20,7 @@ export const joinRoom = async (req: Request, res: Response) => {
         if (!roomData.speakers.includes(userData.name)) {
             await roomData.updateOne({ $push: { speakers: userData.name } });
             await roomData.save();
-            return res.status(201).json({ success: true, msg: "User joined Room successfully",userData });
+            return res.status(201).json({ success: true, msg: "User joined Room successfully", userData });
         }
         else {
             return res.status(301).json({ success: false, msg: "User already exists in the Room" });
@@ -48,7 +48,7 @@ export const leaveARoom = async (req: Request, res: Response) => {
         if (roomData.speakers.includes(userData.name)) {
             await roomData.updateOne({ $pull: { speakers: userData.name } });
             await roomData.save();
-            return res.status(201).json({ success: true, msg: "User Left Room successfully" });
+            return res.status(201).json({ success: true, msg: "User Left Room successfully", userData });
         }
         else {
             return res.status(301).json({ success: false, msg: "User doesn't exist in the Room" });

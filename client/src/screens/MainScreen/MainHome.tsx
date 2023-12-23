@@ -64,12 +64,12 @@ const MainHome = ({ primaryTheme }: Props) => {
   return (
     <div className=" min-h-screen mt-2">
       <section className=" md:flex items-center justify-around p-2 ">
-        <main className=" flex justify-center items-center md:gap-10 gap-2">
-          <div className="">
+        <main className=" mt-3 flex justify-center items-center md:gap-10 gap-2 mb-3 max-md:block ">
+          <div className="mb-3">
             <h1 className=" font-poppins text-2xl">All Voice Rooms</h1>
             <hr className=" w-[100px] mb-1 bg-primary-indigo h-1" />
           </div>
-          <div>
+          <div className=" flex items-center max-w-3xl justify-between  " >
             <Icon
               component={SearchIcon}
               fontSize="large"

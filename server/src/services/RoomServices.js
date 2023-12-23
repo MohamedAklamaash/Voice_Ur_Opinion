@@ -50,7 +50,7 @@ const leaveARoom = async (req, res) => {
         if (roomData.speakers.includes(userData.name)) {
             await roomData.updateOne({ $pull: { speakers: userData.name } });
             await roomData.save();
-            return res.status(201).json({ success: true, msg: "User Left Room successfully" });
+            return res.status(201).json({ success: true, msg: "User Left Room successfully", userData });
         }
         else {
             return res.status(301).json({ success: false, msg: "User doesn't exist in the Room" });

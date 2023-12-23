@@ -43,12 +43,18 @@ interface User {
     email?: string;
     phoneNumber?: string;
     userProfileUrl?: string;
+    socketId?: string
 }
 
 io.on("connection", (socket: Socket) => {
     socket.on("connect", () => {
         console.log("User connected", socket.id);
     });
+
+    socket.on(socketActions.ADD_PEER, ({ roomId, users }: { roomId: string; users: User[] }) => {
+        socketUserMap[roomId] = users;
+    });
+
 
     socket.on(socketActions.JOIN, (data) => {
         const { roomId, user }: { roomId: string; user: User } = data;
@@ -57,7 +63,7 @@ io.on("connection", (socket: Socket) => {
         if (!socketUserMap[roomId]) {
             socketUserMap[roomId] = [];
         }
-
+        user["socketId"] = socket.id;
         // Add the user to the array for the specified roomId
         socketUserMap[roomId].push(user);
 
@@ -66,24 +72,31 @@ io.on("connection", (socket: Socket) => {
 
         // Join the socket room for the specified roomId
         socket.join(roomId);
-
+        console.log(socketUserMap);
         // Emit the JOIN event to the current user
         socket.to(socket.id).emit(socketActions.JOIN, { user });
 
     });
     socket.on(socketActions.LEAVE, ({ user, roomId }: { user: User; roomId: string }) => {
-        // Use the filter method correctly and update socketUserMap[roomId]
-        socketUserMap[roomId] = socketUserMap[roomId].filter((data) => data.email !== user.email);
+        try {
+            // Use the filter method correctly and update socketUserMap[roomId]
 
-        // Emit the LEAVE event to all users in the roomId
-        io.to(roomId).emit(socketActions.LEAVE, { users: socketUserMap });
+            socketUserMap[roomId] = socketUserMap[roomId].filter((data) => data.email !== user.email);
 
-        // Join the socket room for the specified roomId (is this intentional?)
-        socket.join(roomId);
+            // Emit the LEAVE event to all users in the roomId
+            io.to(roomId).emit(socketActions.LEAVE, { users: socketUserMap });
 
-        // Emit the LEAVE event to the current user
-        socket.to(socket.id).emit(socketActions.LEAVE, { users: socketUserMap });
-        console.log(user.name + ":Left the Room");
+            // Join the socket room for the specified roomId (is this intentional?)
+            socket.join(roomId);
+            console.log(socketUserMap);
+
+            // Emit the LEAVE event to the current user
+            socket.to(socket.id).emit(socketActions.LEAVE, { users: socketUserMap });
+            console.log(user.name + ":Left the Room");
+        } catch (error) {
+            console.log(error);
+
+        }
     });
 
 
