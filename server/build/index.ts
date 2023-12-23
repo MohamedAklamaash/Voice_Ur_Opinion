@@ -68,7 +68,7 @@ io.on("connection", (socket: Socket) => {
         socket.join(roomId);
 
         // Emit the JOIN event to the current user
-        io.to(socket.id).emit(socketActions.JOIN, { user });
+        socket.to(socket.id).emit(socketActions.JOIN, { user });
 
     });
     socket.on(socketActions.LEAVE, ({ user, roomId }: { user: User; roomId: string }) => {
@@ -82,7 +82,7 @@ io.on("connection", (socket: Socket) => {
         socket.join(roomId);
 
         // Emit the LEAVE event to the current user
-        io.to(socket.id).emit(socketActions.LEAVE, { users: socketUserMap });
+        socket.to(socket.id).emit(socketActions.LEAVE, { users: socketUserMap });
         console.log(user.name + ":Left the Room");
     });
 

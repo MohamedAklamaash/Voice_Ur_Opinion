@@ -53,7 +53,7 @@ io.on("connection", (socket) => {
         // Join the socket room for the specified roomId
         socket.join(roomId);
         // Emit the JOIN event to the current user
-        io.to(socket.id).emit(SocketActions_1.socketActions.JOIN, { user });
+        socket.to(socket.id).emit(SocketActions_1.socketActions.JOIN, { user });
     });
     socket.on(SocketActions_1.socketActions.LEAVE, ({ user, roomId }) => {
         // Use the filter method correctly and update socketUserMap[roomId]
@@ -63,7 +63,7 @@ io.on("connection", (socket) => {
         // Join the socket room for the specified roomId (is this intentional?)
         socket.join(roomId);
         // Emit the LEAVE event to the current user
-        io.to(socket.id).emit(SocketActions_1.socketActions.LEAVE, { users: socketUserMap });
+        socket.to(socket.id).emit(SocketActions_1.socketActions.LEAVE, { users: socketUserMap });
         console.log(user.name + ":Left the Room");
     });
     socket.on("disconnect", () => {
