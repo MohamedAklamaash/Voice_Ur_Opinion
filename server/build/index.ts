@@ -64,7 +64,7 @@ io.on("connection", (socket: Socket) => {
             socketUserMap[roomId] = [];
         }
         user["socketId"] = socket.id;
-        // Add the user to the array for the specified roomId
+
         socketUserMap[roomId].push(user);
 
         // Emit the JOIN event to all users in the roomId
@@ -74,7 +74,7 @@ io.on("connection", (socket: Socket) => {
         socket.join(roomId);
         console.log(socketUserMap);
         // Emit the JOIN event to the current user
-        socket.to(socket.id).emit(socketActions.JOIN, { user });
+        // socket.to(socket.id).emit(socketActions.JOIN, { user });
 
     });
     socket.on(socketActions.LEAVE, ({ user, roomId }: { user: User; roomId: string }) => {
@@ -84,14 +84,14 @@ io.on("connection", (socket: Socket) => {
             socketUserMap[roomId] = socketUserMap[roomId].filter((data) => data.email !== user.email);
 
             // Emit the LEAVE event to all users in the roomId
-            io.to(roomId).emit(socketActions.LEAVE, { users: socketUserMap });
+            io.to(roomId).emit(socketActions.LEAVE, { users: socketUserMap[roomId] });
 
             // Join the socket room for the specified roomId (is this intentional?)
             socket.join(roomId);
             console.log(socketUserMap);
 
             // Emit the LEAVE event to the current user
-            socket.to(socket.id).emit(socketActions.LEAVE, { users: socketUserMap });
+            // socket.to(socket.id).emit(socketActions.LEAVE, { users: socketUserMap });
             console.log(user.name + ":Left the Room");
         } catch (error) {
             console.log(error);

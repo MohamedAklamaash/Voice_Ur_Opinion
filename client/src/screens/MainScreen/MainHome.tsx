@@ -106,7 +106,7 @@ const MainHome = ({ primaryTheme }: Props) => {
       <div className=" grid md:grid-cols-3 max-md:grid-cols-2 max-sm:grid-cols-1 justify-center items-center md:ml-[8%] max-md:ml-[20%] cursor-pointer ">
         {publicRooms.map((obj, index) => {
           return (
-            <div key={index}>
+            <div key={index} className=" flex justify-center items-center">
               <Link to={`/room/${obj._id}`}>
                 <RoomCard title={obj?.title} owner={obj?.roomCreater1} />
               </Link>

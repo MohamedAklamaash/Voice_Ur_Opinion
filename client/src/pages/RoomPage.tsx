@@ -27,6 +27,16 @@ interface User {
   _id?: string; // Add an optional _id property
 }
 
+/*
+  1) P2P needs to be done only for the users that are online,
+  2) Need to update the state of the ui without ever refreshing it,
+  3) need to add a green btn for the users that are online
+  4) Muting and unmuting info should be relied b/w the users that are online
+  5) Need to take the ref of the audio element and share audio data b/t the devices
+  Note:
+    -- UI must be updated properly when there is a change of state in the data of the existing users
+*/
+
 const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
   const { id } = useParams<{ id: string }>(); // Specify the type for useParams
   const [roomData, setRoomData] = useState<RoomData>({
@@ -58,7 +68,7 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
       const { data, userData } = response.data;
       setRoomData(data);
       setUserAlreadyInRoom(data.speakers.includes(userName));
-      socket.emit(socketActions.ADD_PEER, { users: userData, roomId: id });
+      // socket.emit(socketActions.ADD_PEER, { users: userData, roomId: id });
       setUserData(userData);
       const storedIsUserMuted = sessionStorage.getItem("isUserMuted");
       const initialMuteState: Record<string, boolean> = storedIsUserMuted
@@ -142,7 +152,7 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
   const existingUserLeftTheRoom = useCallback(
     ({ users }: { users: User[] }) => {
       console.log(users);
-      setUserData(users);
+      setUserData(users);s
     },
     []
   );
