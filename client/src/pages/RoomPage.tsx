@@ -152,7 +152,7 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
   const existingUserLeftTheRoom = useCallback(
     ({ users }: { users: User[] }) => {
       console.log(users);
-      setUserData(users);s
+      setUserData(users);
     },
     []
   );

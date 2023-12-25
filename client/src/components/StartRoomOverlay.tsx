@@ -6,6 +6,8 @@ import { useState } from "react";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { socket } from "../sockets/socket";
+import { socketActions } from "../constants/Actions";
 type Props = {
   setshowModal: (showModel: boolean) => void;
   showModal: boolean;
@@ -22,11 +24,14 @@ const StartRoomOverlay = ({ setshowModal, showModal, primaryTheme }: Props) => {
   const [title, settitle] = useState<string>("");
   const { email } = useSelector((state) => state.user);
   const createARoom = async () => {
-    const { data:{data} } = await axios.post("http://localhost:8001/room/createARoom",{
+    const {
+      data: { data, userData },
+    } = await axios.post("http://localhost:8001/room/createARoom", {
       email,
       title,
-      roomType:selectRoom
+      roomType: selectRoom,
     });
+    socket.emit(socketActions.JOIN, { user: userData, roomId: data._id }); //need to send the user data
     navigate(`/room/${data._id}`);
   };
 
@@ -167,7 +172,7 @@ const StartRoomOverlay = ({ setshowModal, showModal, primaryTheme }: Props) => {
                 ? " text-primary-white font-bold"
                 : " text-primary-black-700 font-bold"
             }  bg-primary-success px-8 py-4 rounded-3xl font-poppins`}
-            onClick={()=>{
+            onClick={() => {
               createARoom();
             }}
           >
