@@ -17,6 +17,7 @@ const socket_io_1 = require("socket.io");
 const Room_Routes_1 = __importDefault(require("./routes/Room_Routes"));
 const ActivationRoutes_1 = __importDefault(require("./routes/ActivationRoutes"));
 const SocketActions_1 = require("./actions/SocketActions");
+const UserDataModel_1 = require("./models/UserDataModel");
 (0, mongoConnection_1.mongoConnection)();
 const server = (0, node_http_1.createServer)(app);
 const io = new socket_io_1.Server(server, {
@@ -62,23 +63,35 @@ io.on("connection", (socket) => {
         socket.join(roomId);
     });
     socket.on(SocketActions_1.socketActions.JOIN, async (data) => {
-        let { roomId, user } = data;
-        // Check if the roomId already exists in socketUserMap
-        if (!socketUserMap[roomId]) {
-            socketUserMap[roomId] = [];
+        try {
+            let { roomId, user } = data;
+            // Check if the roomId already exists in socketUserMap
+            if (!socketUserMap[roomId]) {
+                socketUserMap[roomId] = [];
+            }
+            user["isMuted"] = false;
+            if (user?.owner?.length > 0) {
+                // If user has an owner, try to find the user in the database
+                const foundUser = await UserDataModel_1.UserSchema.findOne({ name: user.owner });
+                if (foundUser) {
+                    user = foundUser;
+                }
+                else {
+                    console.error(`User not found for email: ${user.email}`);
+                    return; // Stop further execution
+                }
+            }
+            socketUserMap[roomId].push(user);
+            // Emit the JOIN event to all users in the roomId
+            io.to(roomId).emit(SocketActions_1.socketActions.JOIN, { user });
+            // Join the socket room for the specified roomId
+            socket.join(roomId);
+            // Emit the JOIN event to the current user
+            // socket.to(socket.id).emit(socketActions.JOIN, { user });
         }
-        user["isMuted"] = false;
-        // if(user?.owner!==""){
-        //     user = await UserSchema.findById(user._id);
-        // }
-        socketUserMap[roomId].push(user);
-        console.log(socketUserMap);
-        // Emit the JOIN event to all users in the roomId
-        io.to(roomId).emit(SocketActions_1.socketActions.JOIN, { user });
-        // Join the socket room for the specified roomId
-        socket.join(roomId);
-        // Emit the JOIN event to the current user
-        // socket.to(socket.id).emit(socketActions.JOIN, { user });
+        catch (error) {
+            console.error('Error in JOIN event:', error);
+        }
     });
     socket.on(SocketActions_1.socketActions.LEAVE, ({ user, roomId }) => {
         try {

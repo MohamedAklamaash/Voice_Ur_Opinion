@@ -83,29 +83,45 @@ io.on("connection", (socket: Socket) => {
 
 
 
-    socket.on(socketActions.JOIN, async(data) => {
-        let { roomId, user }: { roomId: string; user: User } = data;
+    socket.on(socketActions.JOIN, async (data) => {
+        try {
+            let { roomId, user }: { roomId: string; user: User } = data;
 
-        // Check if the roomId already exists in socketUserMap
-        if (!socketUserMap[roomId]) {
-            socketUserMap[roomId] = [];
+            // Check if the roomId already exists in socketUserMap
+            if (!socketUserMap[roomId]) {
+                socketUserMap[roomId] = [];
+            }
+
+            user["isMuted"] = false;
+            
+            if (user?.owner?.length > 0) {
+                // If user has an owner, try to find the user in the database
+                const foundUser = await UserSchema.findOne({ name: user.owner });
+
+                if (foundUser) {
+                    user = foundUser;
+                } else {
+                    console.error(`User not found for email: ${user.email}`);
+                    return; // Stop further execution
+                }
+            }
+            
+            socketUserMap[roomId].push(user);
+
+            // Emit the JOIN event to all users in the roomId
+            io.to(roomId).emit(socketActions.JOIN, { user });
+
+            // Join the socket room for the specified roomId
+            socket.join(roomId);
+
+            // Emit the JOIN event to the current user
+            // socket.to(socket.id).emit(socketActions.JOIN, { user });
+
+        } catch (error) {
+            console.error('Error in JOIN event:', error);
         }
-        user["isMuted"] = false;
-        // if(user?.owner!==""){
-        //     user = await UserSchema.findById(user._id);
-        // }
-        socketUserMap[roomId].push(user);
-        console.log(socketUserMap);
-        
-        // Emit the JOIN event to all users in the roomId
-        io.to(roomId).emit(socketActions.JOIN, { user });
-
-        // Join the socket room for the specified roomId
-        socket.join(roomId);
-        // Emit the JOIN event to the current user
-        // socket.to(socket.id).emit(socketActions.JOIN, { user });
-
     });
+
     socket.on(socketActions.LEAVE, ({ user, roomId }: { user: User; roomId: string }) => {
         try {
             // Use the filter method correctly and update socketUserMap[roomId]

@@ -151,10 +151,10 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
     []
   );
 
-  const userMuteInfo = ({ users }: { users: User[] }) => {
+  const userMuteInfo = useCallback(({ users }: { users: User[] }) => {
     console.log(users);
     // setUserData(users);
-  };
+  }, []);
 
   useEffect(() => {
     socket.on(socketActions.JOIN, newUserJoinded);
@@ -165,7 +165,16 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
       socket.off(socketActions.LEAVE, existingUserLeftTheRoom);
       socket.off(socketActions.MUTE_INFO, userMuteInfo);
     };
-  }, [joinRoom, socket, leaveTheRoom, userMuteInfo, toggleMute]);
+  }, [
+    joinRoom,
+    socket,
+    leaveTheRoom,
+    userMuteInfo,
+    toggleMute,
+    newUserJoinded,
+    existingUserLeftTheRoom,
+    userMuteInfo,
+  ]);
 
   return (
     <>
