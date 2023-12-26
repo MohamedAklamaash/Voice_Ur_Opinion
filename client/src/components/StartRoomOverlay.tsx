@@ -25,13 +25,14 @@ const StartRoomOverlay = ({ setshowModal, showModal, primaryTheme }: Props) => {
   const { email } = useSelector((state) => state.user);
   const createARoom = async () => {
     const {
-      data: { data, userData },
+      data: { data },
     } = await axios.post("http://localhost:8001/room/createARoom", {
       email,
       title,
       roomType: selectRoom,
     });
-    socket.emit(socketActions.JOIN, { user: userData, roomId: data._id }); //need to send the user data
+    
+    socket.emit(socketActions.JOIN, {  roomId: data._id,user: data }); //need to send the user data
     navigate(`/room/${data._id}`);
   };
 

@@ -25,20 +25,21 @@ interface User {
   name: string;
   userProfileUrl?: string;
   _id?: string; // Add an optional _id property
+  isMuted?: boolean;
 }
 
 /*
   1) P2P needs to be done only for the users that are online,
-  2) Need to update the state of the ui without ever refreshing it,
+  2) Need to update the state of the ui without ever refreshing it,--done
   3) need to add a green btn for the users that are online
   4) Muting and unmuting info should be relied b/w the users that are online
   5) Need to take the ref of the audio element and share audio data b/t the devices
   Note:
-    -- UI must be updated properly when there is a change of state in the data of the existing users
+    -- UI must be updated properly when there is a change of state in the data of the existing users --done
 */
 
 const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
-  const { id } = useParams<{ id: string }>(); // Specify the type for useParams
+  const { id } = useParams<{ id: string }>();
   const [roomData, setRoomData] = useState<RoomData>({
     owner: "",
     title: "",
@@ -46,20 +47,19 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
   });
 
   const [userData, setUserData] = useState<User[]>([]);
-  const userRoomDetails = useRef<Record<string, unknown>>({}); // Specify the type for useRef
   const [userAlreadyInRoom, setUserAlreadyInRoom] = useState<boolean>(false);
-  const [isUserMuted, setIsUserMuted] = useState<Record<string, boolean>>({});
+
   const { userName, email, userProfileUrl } = useSelector(
     (state: {
       user: { userName: string; email: string; userProfileUrl?: string };
     }) => state.user
   );
 
-  const { captureMedia } = useWebRtc();
+  // const { captureMedia } = useWebRtc();
 
-  const [audioStream, setaudioStream] = useState([]);
-  const audioRef = useRef();
-  socket.emit("room", userData);
+  // const [audioStream, setaudioStream] = useState([]);
+  // const audioRef = useRef();
+
   const getRoomDetails = useCallback(async () => {
     try {
       const response = await axios.get<{ data: RoomData; userData: User[] }>(
@@ -68,7 +68,6 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
       const { data, userData } = response.data;
       setRoomData(data);
       setUserAlreadyInRoom(data.speakers.includes(userName));
-      // socket.emit(socketActions.ADD_PEER, { users: userData, roomId: id });
       setUserData(userData);
       const storedIsUserMuted = sessionStorage.getItem("isUserMuted");
       const initialMuteState: Record<string, boolean> = storedIsUserMuted
@@ -77,8 +76,6 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
       data.speakers.forEach((usr: string) => {
         initialMuteState[usr] = initialMuteState[usr] || false;
       });
-
-      setIsUserMuted(initialMuteState);
     } catch (error) {
       console.error("Error fetching room details:", error);
     }
@@ -107,7 +104,7 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
       });
       socket.emit(socketActions.JOIN, { roomId: id, user: userData });
 
-      //window.location.reload();
+      window.location.reload();
     } catch (error) {
       console.error("Error joining the room:", error);
     }
@@ -116,10 +113,6 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
   useEffect(() => {
     getRoomDetails();
   }, [getRoomDetails]);
-
-  useEffect(() => {
-    userRoomDetails.current = userData;
-  }, [userData]);
 
   const deleteARoom = useCallback(async () => {
     try {
@@ -133,37 +126,46 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
 
   const toggleMute = (user?: User) => {
     if (userName === roomData.owner || userName === user?.name) {
-      setIsUserMuted((prevIsUserMuted) => {
-        const updatedState = {
-          ...prevIsUserMuted,
-          [user?.name]: !prevIsUserMuted[user?.name],
-        };
-
-        return updatedState;
+      setUserData((prevUserData) => {
+        const updatedUserData = prevUserData.map((u) => {
+          if (u.name === user?.name) {
+            return { ...u, isMuted: !u.isMuted }; // Toggleing the mute status
+          }
+          return u;
+        });
+        return updatedUserData;
       });
     }
   };
 
   const newUserJoinded = useCallback(({ user }: { user: User }) => {
-    console.log(user);
     setUserData((prev) => [...prev, user]);
   }, []);
 
+  console.log(userData);
+
   const existingUserLeftTheRoom = useCallback(
     ({ users }: { users: User[] }) => {
-      console.log(users);
       setUserData(users);
     },
     []
   );
 
+  const userMuteInfo = ({ users }: { users: User[] }) => {
+    console.log(users);
+    // setUserData(users);
+  };
+
   useEffect(() => {
     socket.on(socketActions.JOIN, newUserJoinded);
     socket.on(socketActions.LEAVE, existingUserLeftTheRoom);
+    socket.on(socketActions.MUTE_INFO, userMuteInfo);
     return () => {
       socket.off(socketActions.JOIN, newUserJoinded);
+      socket.off(socketActions.LEAVE, existingUserLeftTheRoom);
+      socket.off(socketActions.MUTE_INFO, userMuteInfo);
     };
-  }, [joinRoom, socket, existingUserLeftTheRoom]);
+  }, [joinRoom, socket, leaveTheRoom, userMuteInfo, toggleMute]);
 
   return (
     <>
@@ -213,6 +215,7 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
         <h1 className=" p-10 text-4xl font-bold">Speakers:</h1>{" "}
         <main className="p-10 grid grid-cols-4 max-md:grid-cols-2 max-sm:grid-cols-1">
           {userData.map((user, index) => {
+            // actually the obj properties of the room creator is different from the rest of the speakers in the room
             return (
               <div
                 key={index}
@@ -225,7 +228,7 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
                 />
                 <audio
                   autoPlay
-                  muted={isUserMuted[user?.name]}
+                  muted={user?.isMuted}
                   ref={(instance: HTMLAudioElement | null) => {
                     // Specify the type for ref instance
                   }}
@@ -233,9 +236,15 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
                 ></audio>
                 <button
                   className="bg-blue-600 text-lg font-poppins rounded-full mt-2 mb-2 px-7 py-3"
-                  onClick={() => toggleMute(user)}
+                  onClick={() => {
+                    socket.emit(socketActions.MUTE, {
+                      roomId: id,
+                      userId: user._id,
+                    });
+                    toggleMute(user);
+                  }}
                 >
-                  {isUserMuted[user?.name] === true ? (
+                  {user?.isMuted === true ? (
                     <Icon component={MicOffIcon} />
                   ) : (
                     <Icon component={MicOutlinedIcon} />

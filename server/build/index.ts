@@ -12,7 +12,7 @@ import { Server, Socket } from "socket.io";
 import roomRoutes from "./routes/Room_Routes";
 import activationRoutes from './routes/ActivationRoutes';
 import { socketActions } from "./actions/SocketActions";
-
+import {UserSchema} from "./models/UserDataModel"
 mongoConnection();
 
 const server = createServer(app);
@@ -43,7 +43,10 @@ interface User {
     email?: string;
     phoneNumber?: string;
     userProfileUrl?: string;
-    socketId?: string
+    socketId?: string;
+    isMuted?: boolean,
+    _id?: string;
+    owner?:string;
 }
 
 io.on("connection", (socket: Socket) => {
@@ -55,24 +58,50 @@ io.on("connection", (socket: Socket) => {
         socketUserMap[roomId] = users;
     });
 
+    socket.on(socketActions.MUTE, ({ roomId, userId }: { roomId: string; userId: string }) => {
+        // Check if the roomId already exists in socketUserMap
+        if (!socketUserMap[roomId]) {
+            socketUserMap[roomId] = [];
+        }
+        console.log(socketUserMap);
+        
+        console.log(roomId,userId);
+        
+        // Use map instead of filter to create a new array with updated mute status
+        socketUserMap[roomId] = socketUserMap[roomId].map(user => {
+            if (user._id === userId) {
+                user.isMuted = !user.isMuted;
+            }
+            return user;
+        });
 
-    socket.on(socketActions.JOIN, (data) => {
-        const { roomId, user }: { roomId: string; user: User } = data;
+        io.to(roomId).emit(socketActions.MUTE_INFO, { users: socketUserMap[roomId] });
+        console.log(socketUserMap);
+
+        socket.join(roomId);
+    });
+
+
+
+    socket.on(socketActions.JOIN, async(data) => {
+        let { roomId, user }: { roomId: string; user: User } = data;
 
         // Check if the roomId already exists in socketUserMap
         if (!socketUserMap[roomId]) {
             socketUserMap[roomId] = [];
         }
-        user["socketId"] = socket.id;
-
+        user["isMuted"] = false;
+        // if(user?.owner!==""){
+        //     user = await UserSchema.findById(user._id);
+        // }
         socketUserMap[roomId].push(user);
-
+        console.log(socketUserMap);
+        
         // Emit the JOIN event to all users in the roomId
         io.to(roomId).emit(socketActions.JOIN, { user });
 
         // Join the socket room for the specified roomId
         socket.join(roomId);
-        console.log(socketUserMap);
         // Emit the JOIN event to the current user
         // socket.to(socket.id).emit(socketActions.JOIN, { user });
 
@@ -85,10 +114,6 @@ io.on("connection", (socket: Socket) => {
 
             // Emit the LEAVE event to all users in the roomId
             io.to(roomId).emit(socketActions.LEAVE, { users: socketUserMap[roomId] });
-
-            // Join the socket room for the specified roomId (is this intentional?)
-            socket.join(roomId);
-            console.log(socketUserMap);
 
             // Emit the LEAVE event to the current user
             // socket.to(socket.id).emit(socketActions.LEAVE, { users: socketUserMap });
