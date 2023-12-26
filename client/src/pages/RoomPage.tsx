@@ -153,7 +153,7 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
 
   const userMuteInfo = useCallback(({ users }: { users: User[] }) => {
     console.log(users);
-    // setUserData(users);
+    setUserData(users);
   }, []);
 
   useEffect(() => {
@@ -169,11 +169,7 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
     joinRoom,
     socket,
     leaveTheRoom,
-    userMuteInfo,
     toggleMute,
-    newUserJoinded,
-    existingUserLeftTheRoom,
-    userMuteInfo,
   ]);
 
   return (

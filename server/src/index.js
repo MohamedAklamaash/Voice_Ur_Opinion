@@ -69,7 +69,6 @@ io.on("connection", (socket) => {
             if (!socketUserMap[roomId]) {
                 socketUserMap[roomId] = [];
             }
-            user["isMuted"] = false;
             if (user?.owner?.length > 0) {
                 // If user has an owner, try to find the user in the database
                 const foundUser = await UserDataModel_1.UserSchema.findOne({ name: user.owner });
@@ -81,6 +80,7 @@ io.on("connection", (socket) => {
                     return; // Stop further execution
                 }
             }
+            user["isMuted"] = false;
             socketUserMap[roomId].push(user);
             // Emit the JOIN event to all users in the roomId
             io.to(roomId).emit(SocketActions_1.socketActions.JOIN, { user });

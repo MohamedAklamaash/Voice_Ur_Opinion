@@ -92,12 +92,11 @@ io.on("connection", (socket: Socket) => {
                 socketUserMap[roomId] = [];
             }
 
-            user["isMuted"] = false;
             
             if (user?.owner?.length > 0) {
                 // If user has an owner, try to find the user in the database
                 const foundUser = await UserSchema.findOne({ name: user.owner });
-
+                
                 if (foundUser) {
                     user = foundUser;
                 } else {
@@ -105,6 +104,7 @@ io.on("connection", (socket: Socket) => {
                     return; // Stop further execution
                 }
             }
+            user["isMuted"] = false;
             
             socketUserMap[roomId].push(user);
 
