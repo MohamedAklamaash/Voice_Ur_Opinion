@@ -103,7 +103,7 @@ const MainHome = ({ primaryTheme }: Props) => {
           </button>
         </section>
       </section>
-      <div className=" grid md:grid-cols-3 max-md:grid-cols-2 max-sm:grid-cols-1 justify-center items-center md:ml-[8%] max-md:ml-[20%] cursor-pointer ">
+      <div className=" grid md:grid-cols-3 max-md:grid-cols-2 max-sm:grid-cols-1 justify-center items-center md:ml-[8%] max-md:ml-[20%] mr-[10%] gap-10 cursor-pointer ">
         {publicRooms.map((obj, index) => {
           return (
             <div key={index} className=" flex justify-center items-center">

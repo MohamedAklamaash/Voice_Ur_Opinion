@@ -129,7 +129,7 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
       setUserData((prevUserData) => {
         const updatedUserData = prevUserData.map((u) => {
           if (u.name === user?.name) {
-            return { ...u, isMuted: !u.isMuted }; // Toggleing the mute status
+            return { ...u, isMuted: !u.isMuted }; // Toggling the mute status
           }
           return u;
         });
@@ -142,8 +142,6 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
     setUserData((prev) => [...prev, user]);
   }, []);
 
-  console.log(userData);
-
   const existingUserLeftTheRoom = useCallback(
     ({ users }: { users: User[] }) => {
       setUserData(users);
@@ -152,7 +150,6 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
   );
 
   const userMuteInfo = useCallback(({ users }: { users: User[] }) => {
-    console.log(users);
     setUserData(users);
   }, []);
 
@@ -178,7 +175,7 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
         <div className=" relative mt-10 md:flex items-center justify-end gap-10 p-7 mb-10 ">
           {roomData?.owner === userName ? (
             <>
-              <button className="font-roboto text-lg font-bold bg-primary-indigo px-6 py-4 rounded-xl">
+              <button className="font-roboto text-lg font-bold bg-primary-indigo px-6 py-4 mr-10 max-md:mb-[5%] rounded-xl">
                 Update the Room
               </button>
               <button
@@ -220,7 +217,6 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
         <h1 className=" p-10 text-4xl font-bold">Speakers:</h1>{" "}
         <main className="p-10 grid grid-cols-4 max-md:grid-cols-2 max-sm:grid-cols-1">
           {userData.map((user, index) => {
-            // actually the obj properties of the room creator is different from the rest of the speakers in the room
             return (
               <div
                 key={index}
@@ -235,7 +231,7 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
                   autoPlay
                   muted={user?.isMuted}
                   ref={(instance: HTMLAudioElement | null) => {
-                    // Specify the type for ref instance
+                    // Specify the type for ref instance for audio transmission
                   }}
                   controls
                 ></audio>
