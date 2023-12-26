@@ -54,6 +54,15 @@ const Navbar = ({ name, imgSrc, setprimaryTheme, primaryTheme }: Props) => {
             navigate(`/${imgSrc}`);
           }}
         />
+        <h1
+          onClick={() => {
+            localStorage.clear();
+            window.location.href = "/";
+          }}
+          className=" text-2xl px-3 text-primary-indigo   font-bold cursor-pointer font-roboto "
+        >
+          LogOut
+        </h1>
         <div className=" p-4">
           {primaryTheme === "dark" ? (
             <Icon
@@ -87,9 +96,7 @@ const Navbar = ({ name, imgSrc, setprimaryTheme, primaryTheme }: Props) => {
               <h1 className=" p-2  font-poppins text-center tracking-wide text-lg font-bold text-white">
                 {name.charAt(0).toUpperCase() + name.slice(1)}
               </h1>
-              <Link to={`${imgSrc}`}
-              target="_blank"
-              >
+              <Link to={`${imgSrc}`} target="_blank">
                 <img
                   src={`${imgSrc}`}
                   alt="Profile Pic"

@@ -73,7 +73,7 @@ const MainHome = ({ primaryTheme }: Props) => {
             <Icon
               component={SearchIcon}
               fontSize="large"
-              className=" absolute text-black mt-[10px] ml-[10px]"
+              className=" max-md:block absolute text-black mt-[10px] ml-[10px]"
             />
             <input
               type="text"

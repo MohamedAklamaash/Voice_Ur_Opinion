@@ -1,3 +1,4 @@
+import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 interface Props {
   setstepPageCount: (num: number) => void;
@@ -5,6 +6,13 @@ interface Props {
 }
 const Home = ({ stepPageCount, setstepPageCount }: Props) => {
   const navigate = useNavigate();
+  const { userName, email, userProfileUrl } = useSelector(
+    (state) => state.user
+  );
+  if (userName) {
+    window.location.href = `http://localhost:5173/home?userName=${userName}&?profileUrl=${userProfileUrl}`;
+  }
+
   return (
     <div className=" min-h-screen mx-auto mt-[10%] ">
       <section className=" md:w-[40%] max-md:w-[60%] flex flex-col shadow-2xl justify-center items-center max-md:mt-[10%] md:ml-[30%] max-md:ml-[24%] ">
