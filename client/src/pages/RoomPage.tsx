@@ -24,7 +24,7 @@ interface RoomData {
 interface User {
   name: string;
   userProfileUrl?: string;
-  _id?: string; // Add an optional _id property
+  _id?: string;
   isMuted?: boolean;
 }
 
@@ -32,8 +32,10 @@ interface User {
   1) P2P needs to be done only for the users that are online,
   2) Need to update the state of the ui without ever refreshing it,--done
   3) need to add a green btn for the users that are online
-  4) Muting and unmuting info should be relied b/w the users that are online
+  4) Muting and unmuting info should be relied b/w the users that are online --done
   5) Need to take the ref of the audio element and share audio data b/t the devices
+  6) need to add logout btn for a mobile device
+  
   Note:
     -- UI must be updated properly when there is a change of state in the data of the existing users --done
 */

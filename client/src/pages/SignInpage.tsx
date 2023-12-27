@@ -19,7 +19,7 @@ const SignInpage = ({
   stepPageCount,
   primaryTheme,
 }: Props) => {
-  const [component, setcomponent] = useState<Component>("phone");
+  const [component, setcomponent] = useState<Component>("mail");
 
   return (
     <div className="min-h-screen">

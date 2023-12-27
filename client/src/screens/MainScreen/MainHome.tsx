@@ -12,9 +12,9 @@ type Props = {
   primaryTheme: Theme;
 };
 
-// get all public rooms and display it in the Main Home Page
+// get all public rooms and display it in the Main Home Page -- done
 
-//need to implement searching option in the main home component
+//need to implement searching option in the main home component --done
 
 const MainHome = ({ primaryTheme }: Props) => {
   const [searchVoiceRooms, setsearchVoiceRooms] = useState<string>("");
@@ -24,6 +24,10 @@ const MainHome = ({ primaryTheme }: Props) => {
   const { userName, phoneNumber, email, userProfileUrl } = useSelector(
     (state) => state.user
   );
+
+  if (userName === "") {
+    window.location.href = "/";
+  }
 
   const activateUser = async () => {
     const { data } = await axios.post(
@@ -57,7 +61,7 @@ const MainHome = ({ primaryTheme }: Props) => {
       const filteredData = publicRooms.filter((pub) =>
         pub.title.includes(searchVoiceRooms)
       );
-      setpublicRooms(filteredData);      
+      setpublicRooms(filteredData);
     }
   }, [searchVoiceRooms]);
 
@@ -69,7 +73,7 @@ const MainHome = ({ primaryTheme }: Props) => {
             <h1 className=" font-poppins text-2xl">All Voice Rooms</h1>
             <hr className=" w-[100px] mb-1 bg-primary-indigo h-1" />
           </div>
-          <div className=" flex items-center max-w-3xl justify-between  " >
+          <div className=" flex items-center max-w-3xl justify-between  ">
             <Icon
               component={SearchIcon}
               fontSize="large"
@@ -114,7 +118,8 @@ const MainHome = ({ primaryTheme }: Props) => {
           );
         })}
       </div>
-      <div className=" relative">
+      {/*     Need to create a optimum overlay for a mobile device   */}
+      <div className="relative">
         {showModal && (
           <StartRoomOverlay
             setshowModal={setshowModal}
