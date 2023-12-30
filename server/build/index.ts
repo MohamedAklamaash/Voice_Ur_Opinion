@@ -12,7 +12,8 @@ import { Server, Socket } from "socket.io";
 import roomRoutes from "./routes/Room_Routes";
 import activationRoutes from './routes/ActivationRoutes';
 import { socketActions } from "./actions/SocketActions";
-import {UserSchema} from "./models/UserDataModel"
+import { UserSchema } from "./models/UserDataModel"
+import { RoomSchema } from "./models/RoomModal";
 mongoConnection();
 
 const server = createServer(app);
@@ -36,7 +37,13 @@ app.use("/room", roomRoutes);
 app.use("/userActivation", activationRoutes);
 
 const socketUserMap: Record<string, User[]> = {};
+const sendersPCs = {}
+const receiversPC = {};
 
+
+const isIncluded = (array: User[], id: string) => {
+    return array.some((usr) => usr._id === id);
+}
 interface User {
     name?: string;
     activated?: boolean;
@@ -46,7 +53,7 @@ interface User {
     socketId?: string;
     isMuted?: boolean,
     _id?: string;
-    owner?:string;
+    owner?: string;
 }
 
 io.on("connection", (socket: Socket) => {
@@ -55,7 +62,7 @@ io.on("connection", (socket: Socket) => {
     });
 
     socket.on(socketActions.ADD_PEER, ({ roomId, users }: { roomId: string; users: User[] }) => {
-        socketUserMap[roomId] = users;
+        socketUserMap[roomId] = users; 
     });
 
     socket.on(socketActions.MUTE, ({ roomId, userId }: { roomId: string; userId: string }) => {
@@ -63,11 +70,7 @@ io.on("connection", (socket: Socket) => {
         if (!socketUserMap[roomId]) {
             socketUserMap[roomId] = [];
         }
-        console.log(socketUserMap);
-        
-        console.log(roomId,userId);
-        
-        // Use map instead of filter to create a new array with updated mute status
+
         socketUserMap[roomId] = socketUserMap[roomId].map(user => {
             if (user._id === userId) {
                 user.isMuted = !user.isMuted;
@@ -77,10 +80,9 @@ io.on("connection", (socket: Socket) => {
 
         io.to(roomId).emit(socketActions.MUTE_INFO, { users: socketUserMap[roomId] });
         console.log(socketUserMap);
-
+        
         socket.join(roomId);
     });
-
 
 
     socket.on(socketActions.JOIN, async (data) => {
@@ -92,11 +94,13 @@ io.on("connection", (socket: Socket) => {
                 socketUserMap[roomId] = [];
             }
 
+            //When the user joins the room the user should send the offer for stream connection b/w the clients
+            // of the application
             
             if (user?.owner?.length > 0) {
-                // If user has an owner, try to find the user in the database
+                // If user is the owner of the room, try to find the user in the database
                 const foundUser = await UserSchema.findOne({ name: user.owner });
-                
+
                 if (foundUser) {
                     user = foundUser;
                 } else {
@@ -105,6 +109,11 @@ io.on("connection", (socket: Socket) => {
                 }
             }
             user["isMuted"] = false;
+            user["socketId"] = socket.id;
+            // if socket id is present in the object then the user is active
+            socketUserMap[roomId].forEach((usr:User, index:number) => {
+                io.to(user.socketId).emit()
+            });
             
             socketUserMap[roomId].push(user);
 
@@ -116,7 +125,6 @@ io.on("connection", (socket: Socket) => {
 
             // Emit the JOIN event to the current user
             // socket.to(socket.id).emit(socketActions.JOIN, { user });
-
         } catch (error) {
             console.error('Error in JOIN event:', error);
         }
@@ -140,6 +148,30 @@ io.on("connection", (socket: Socket) => {
         }
     });
 
+    socket.on(socketActions.RELAY_ICE, ({ iceCandidate, roomId, peerId }: { iceCandidate: string, roomId: string, peerId: string }) => {
+        io.to(roomId).emit(socketActions.ICE_CANDIDATE, {
+            peerId,
+            iceCandidate,
+        })
+    })
+
+    socket.on(socketActions.RELAY_SDP, ({ sessionDescription, roomId, peerId }: { sessionDescription: string, roomId: string, peerId: string }) => {
+        io.to(roomId).emit(socketActions.SESSION_DESCRIPTION, {
+            sessionDescription,
+            peerId
+        })
+        //peer id is the person's id that the user what to request a streaming with
+    })
+
+    socket.on(socketActions.REMOVE_PEER, async ({ peerId, userName, roomId }: { peerId: string, userName: String, roomId: string }) => {
+        const data = await RoomSchema.findById(roomId);
+        if (data?.owner === userName) {
+            socketUserMap[roomId] = socketUserMap[roomId].filter((usr) => usr._id !== peerId);
+            io.to(roomId).emit(socketActions.REMOVE_PEER, { users: socketUserMap[roomId] });
+        } else {
+            console.log("Only users can remove the users in the room!");
+        }
+    })
 
     socket.on("disconnect", () => {
         console.log("User disconnected!");

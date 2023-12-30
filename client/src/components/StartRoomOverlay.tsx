@@ -32,7 +32,7 @@ const StartRoomOverlay = ({ setshowModal, showModal, primaryTheme }: Props) => {
       roomType: selectRoom,
     });
     
-    socket.emit(socketActions.JOIN, {  roomId: data._id,user: data }); //need to send the user data
+    socket.emit(socketActions.JOIN, {  roomId: data._id,user: data }); //the data here is actually the data about the room
     navigate(`/room/${data._id}`);
   };
 

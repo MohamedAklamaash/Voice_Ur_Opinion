@@ -18,6 +18,7 @@ const Room_Routes_1 = __importDefault(require("./routes/Room_Routes"));
 const ActivationRoutes_1 = __importDefault(require("./routes/ActivationRoutes"));
 const SocketActions_1 = require("./actions/SocketActions");
 const UserDataModel_1 = require("./models/UserDataModel");
+const RoomModal_1 = require("./models/RoomModal");
 (0, mongoConnection_1.mongoConnection)();
 const server = (0, node_http_1.createServer)(app);
 const io = new socket_io_1.Server(server, {
@@ -37,6 +38,11 @@ app.use("/Otp", Otp_routes_1.default);
 app.use("/room", Room_Routes_1.default);
 app.use("/userActivation", ActivationRoutes_1.default);
 const socketUserMap = {};
+const sendersPCs = {};
+const receiversPC = {};
+const isIncluded = (array, id) => {
+    return array.some((usr) => usr._id === id);
+};
 io.on("connection", (socket) => {
     socket.on("connect", () => {
         console.log("User connected", socket.id);
@@ -49,9 +55,6 @@ io.on("connection", (socket) => {
         if (!socketUserMap[roomId]) {
             socketUserMap[roomId] = [];
         }
-        console.log(socketUserMap);
-        console.log(roomId, userId);
-        // Use map instead of filter to create a new array with updated mute status
         socketUserMap[roomId] = socketUserMap[roomId].map(user => {
             if (user._id === userId) {
                 user.isMuted = !user.isMuted;
@@ -69,8 +72,10 @@ io.on("connection", (socket) => {
             if (!socketUserMap[roomId]) {
                 socketUserMap[roomId] = [];
             }
+            //When the user joins the room the user should send the offer for stream connection b/w the clients
+            // of the application
             if (user?.owner?.length > 0) {
-                // If user has an owner, try to find the user in the database
+                // If user is the owner of the room, try to find the user in the database
                 const foundUser = await UserDataModel_1.UserSchema.findOne({ name: user.owner });
                 if (foundUser) {
                     user = foundUser;
@@ -81,6 +86,11 @@ io.on("connection", (socket) => {
                 }
             }
             user["isMuted"] = false;
+            user["socketId"] = socket.id;
+            // if socket id is present in the object then the user is active
+            socketUserMap[roomId].forEach((usr, index) => {
+                io.to(user.socketId).emit();
+            });
             socketUserMap[roomId].push(user);
             // Emit the JOIN event to all users in the roomId
             io.to(roomId).emit(SocketActions_1.socketActions.JOIN, { user });
@@ -105,6 +115,29 @@ io.on("connection", (socket) => {
         }
         catch (error) {
             console.log(error);
+        }
+    });
+    socket.on(SocketActions_1.socketActions.RELAY_ICE, ({ iceCandidate, roomId, peerId }) => {
+        io.to(roomId).emit(SocketActions_1.socketActions.ICE_CANDIDATE, {
+            peerId,
+            iceCandidate,
+        });
+    });
+    socket.on(SocketActions_1.socketActions.RELAY_SDP, ({ sessionDescription, roomId, peerId }) => {
+        io.to(roomId).emit(SocketActions_1.socketActions.SESSION_DESCRIPTION, {
+            sessionDescription,
+            peerId
+        });
+        //peer id is the person's id that the user what to request a streaming with
+    });
+    socket.on(SocketActions_1.socketActions.REMOVE_PEER, async ({ peerId, userName, roomId }) => {
+        const data = await RoomModal_1.RoomSchema.findById(roomId);
+        if (data?.owner === userName) {
+            socketUserMap[roomId] = socketUserMap[roomId].filter((usr) => usr._id !== peerId);
+            io.to(roomId).emit(SocketActions_1.socketActions.REMOVE_PEER, { users: socketUserMap[roomId] });
+        }
+        else {
+            console.log("Only users can remove the users in the room!");
         }
     });
     socket.on("disconnect", () => {

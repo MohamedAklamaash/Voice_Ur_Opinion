@@ -35,7 +35,8 @@ interface User {
   4) Muting and unmuting info should be relied b/w the users that are online --done
   5) Need to take the ref of the audio element and share audio data b/t the devices
   6) need to add logout btn for a mobile device
-  
+  7) The Overlay component is not working in mobile devices
+  8) Need to add React Helmet
   Note:
     -- UI must be updated properly when there is a change of state in the data of the existing users --done
 */
@@ -50,27 +51,37 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
 
   const [userData, setUserData] = useState<User[]>([]);
   const [userAlreadyInRoom, setUserAlreadyInRoom] = useState<boolean>(false);
-
+  const roomUsersRef = useRef<User[]>();
+  const [doesRoomExist, setdoesRoomExist] = useState<boolean>(true);
   const { userName, email, userProfileUrl } = useSelector(
     (state: {
       user: { userName: string; email: string; userProfileUrl?: string };
     }) => state.user
   );
 
-  // const { captureMedia } = useWebRtc();
-
-  // const [audioStream, setaudioStream] = useState([]);
-  // const audioRef = useRef();
-
+  // these are the set of  vars that are responsibe for webRTC
+  const { captureMedia } = useWebRtc();
+  const connections = useRef<Record<string, RTCPeerConnection | null>>({});
+  const localMediaStream = useRef<MediaStream | null>(null);
   const getRoomDetails = useCallback(async () => {
     try {
-      const response = await axios.get<{ data: RoomData; userData: User[] }>(
-        `http://localhost:8001/room/getRoomDetails/${id}`
-      );
-      const { data, userData } = response.data;
+      const response = await axios.get<{
+        data: RoomData;
+        userData: User[];
+        success: boolean;
+      }>(`http://localhost:8001/room/getRoomDetails/${id}`);
+      const { data, userData, success } = response.data;
       setRoomData(data);
+      setdoesRoomExist(success);
       setUserAlreadyInRoom(data.speakers.includes(userName));
       setUserData(userData);
+      localMediaStream.current = await captureMedia();
+      userData.map((usr, index) => {
+        if (usr._id) {
+          connections.current[usr._id] = null;
+        }
+      });
+      socket.emit(socketActions.ADD_PEER, { roomId: id, users: userData });
       const storedIsUserMuted = sessionStorage.getItem("isUserMuted");
       const initialMuteState: Record<string, boolean> = storedIsUserMuted
         ? JSON.parse(storedIsUserMuted)
@@ -82,6 +93,21 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
       console.error("Error fetching room details:", error);
     }
   }, [id, userName]);
+
+  // window.addEventListener("beforeunload", (event) => {
+  //   const message = "Are you sure you want to leave?";
+  //   event.returnValue = message; // Standard for most browsers
+  //   return message; // For some older browsers
+  // });
+
+  useEffect(() => {
+    roomUsersRef.current = userData;
+  }, [userData]);
+
+  if (!doesRoomExist) {
+    window.location.href = `http://localhost:5173/home?userName=${userName}&?profileUrl=${userProfileUrl}`;
+  }
+  
 
   const leaveTheRoom = async () => {
     try {
@@ -105,13 +131,11 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
         email,
       });
       socket.emit(socketActions.JOIN, { roomId: id, user: userData });
-
-      window.location.reload();
+      getRoomDetails();
     } catch (error) {
       console.error("Error joining the room:", error);
     }
   };
-
   useEffect(() => {
     getRoomDetails();
   }, [getRoomDetails]);
@@ -164,12 +188,7 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
       socket.off(socketActions.LEAVE, existingUserLeftTheRoom);
       socket.off(socketActions.MUTE_INFO, userMuteInfo);
     };
-  }, [
-    joinRoom,
-    socket,
-    leaveTheRoom,
-    toggleMute,
-  ]);
+  }, [joinRoom, socket, leaveTheRoom, toggleMute]);
 
   return (
     <>
@@ -235,6 +254,7 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
                   ref={(instance: HTMLAudioElement | null) => {
                     // Specify the type for ref instance for audio transmission
                   }}
+                  className=" max-md:hidden "
                   controls
                 ></audio>
                 <button
