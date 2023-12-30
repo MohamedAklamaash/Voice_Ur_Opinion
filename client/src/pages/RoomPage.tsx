@@ -77,7 +77,7 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
       setUserData(userData);
       localMediaStream.current = await captureMedia();
       userData.map((usr, index) => {
-        if (usr._id) {
+        if (usr._id && !connections.current[usr._id]) {
           connections.current[usr._id] = null;
         }
       });
@@ -107,7 +107,6 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
   if (!doesRoomExist) {
     window.location.href = `http://localhost:5173/home?userName=${userName}&?profileUrl=${userProfileUrl}`;
   }
-  
 
   const leaveTheRoom = async () => {
     try {
@@ -131,7 +130,13 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
         email,
       });
       socket.emit(socketActions.JOIN, { roomId: id, user: userData });
-      getRoomDetails();
+      const iceServers: RTCIceServer[] = [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:global.stun.twilio.com:3478" },
+      ];
+
+      connections.current[userData._id] = new RTCPeerConnection({ iceServers });
+      await getRoomDetails();
     } catch (error) {
       console.error("Error joining the room:", error);
     }
