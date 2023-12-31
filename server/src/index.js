@@ -88,9 +88,9 @@ io.on("connection", (socket) => {
             user["isMuted"] = false;
             user["socketId"] = socket.id;
             // if socket id is present in the object then the user is active
-            socketUserMap[roomId].forEach((usr, index) => {
-                io.to(user.socketId).emit();
-            });
+            // socketUserMap[roomId].forEach((usr: User, index: number) => {
+            //     io.to(user.socketId).emit()
+            // });
             socketUserMap[roomId].push(user);
             // Emit the JOIN event to all users in the roomId
             io.to(roomId).emit(SocketActions_1.socketActions.JOIN, { user });
@@ -105,7 +105,6 @@ io.on("connection", (socket) => {
     });
     socket.on(SocketActions_1.socketActions.LEAVE, ({ user, roomId }) => {
         try {
-            // Use the filter method correctly and update socketUserMap[roomId]
             socketUserMap[roomId] = socketUserMap[roomId].filter((data) => data.email !== user.email);
             // Emit the LEAVE event to all users in the roomId
             io.to(roomId).emit(SocketActions_1.socketActions.LEAVE, { users: socketUserMap[roomId] });
@@ -118,12 +117,15 @@ io.on("connection", (socket) => {
         }
     });
     socket.on(SocketActions_1.socketActions.RELAY_ICE, ({ iceCandidate, roomId, peerId }) => {
+        console.log("Relay ice event called!");
         io.to(roomId).emit(SocketActions_1.socketActions.ICE_CANDIDATE, {
             peerId,
             iceCandidate,
         });
+        console.log("IceCandidate:", iceCandidate);
     });
     socket.on(SocketActions_1.socketActions.RELAY_SDP, ({ sessionDescription, roomId, peerId }) => {
+        console.log("Session description event called ");
         io.to(roomId).emit(SocketActions_1.socketActions.SESSION_DESCRIPTION, {
             sessionDescription,
             peerId

@@ -16,5 +16,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <App />
       </PersistGate>
     </Provider>
+    <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
   </React.StrictMode>
 );

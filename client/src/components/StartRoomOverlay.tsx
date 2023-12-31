@@ -38,7 +38,7 @@ const StartRoomOverlay = ({ setshowModal, showModal, primaryTheme }: Props) => {
 
   return (
     <div
-      className={`p-10 fixed max-md:inline-block top-0 bottom-0 left-0 right-0  flex items-center  justify-center ${
+      className={`p-10 fixed max-md:inline-block max-md:absolute max-lg:top-[-899px] max-md:top-[-1300px] top-0 bottom-0 left-0 right-0  flex items-center  justify-center ${
         primaryTheme === "dark" ? " bg-dialog-bg" : " bg-dialog-bg "
       }  `}
     >

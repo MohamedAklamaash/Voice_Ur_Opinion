@@ -10,7 +10,6 @@ import { Icon } from "@mui/material";
 import { socket } from "../sockets/socket";
 import { socketActions } from "../constants/Actions";
 import { useWebRtc } from "../hooks/useWEBRTC";
-
 interface Props {
   primaryTheme: Theme;
 }
@@ -63,6 +62,7 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
   const { captureMedia } = useWebRtc();
   const connections = useRef<Record<string, RTCPeerConnection | null>>({});
   const localMediaStream = useRef<MediaStream | null>(null);
+  const audioElements = useRef<Record<string, HTMLAudioElement>>({});
   const getRoomDetails = useCallback(async () => {
     try {
       const response = await axios.get<{
@@ -124,23 +124,95 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
 
   const joinRoom = async () => {
     try {
-      const {
-        data: { userData },
-      } = await axios.put(`http://localhost:8001/room/joinRoom/${id}`, {
-        email,
-      });
+      const response = await axios.put(
+        `http://localhost:8001/room/joinRoom/${id}`,
+        {
+          email,
+        }
+      );
+
+      const { userData } = response.data;
+
       socket.emit(socketActions.JOIN, { roomId: id, user: userData });
+
       const iceServers: RTCIceServer[] = [
         { urls: "stun:stun.l.google.com:19302" },
         { urls: "stun:global.stun.twilio.com:3478" },
       ];
 
-      connections.current[userData._id] = new RTCPeerConnection({ iceServers });
+      if (
+        userData._id !== null 
+      ) {
+        const peerConnection = new RTCPeerConnection({ iceServers });
+
+        connections.current[userData._id] = peerConnection;
+
+        peerConnection.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
+          console.log(event);
+          
+          if (event.candidate) {
+            console.log("Ice candidate:",event.candidate);
+            
+            socket.emit(socketActions.ICE_CANDIDATE, {
+              iceCandidate: event.candidate,
+              peerId: userData._id,
+              roomId: id,
+            });
+          }
+        };
+
+        peerConnection.ontrack = ({ streams: [remoteStreams] }) => {
+          const currUser = roomUsersRef.current?.find(
+            (usr) => usr._id === userData._id
+          );
+
+          if (currUser) {
+            // need to handle ontrack logic for the current user if needed
+          }
+
+          const audioElement = audioElements.current[userData._id];
+
+          if (audioElement) {
+            audioElement.srcObject = remoteStreams;
+          } else {
+            let settled = false;
+            const interval = setInterval(() => {
+              if (audioElements.current[userData._id]) {
+                audioElements.current[userData._id].srcObject = remoteStreams;
+                settled = true;
+              }
+              if (settled) {
+                clearInterval(interval);
+              }
+            }, 300);
+          }
+        };
+
+        const offer: RTCSessionDescriptionInit =
+          await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+
+        localStorage.setItem("localDescription", JSON.stringify(offer));
+
+        socket.emit(socketActions.RELAY_SDP, {
+          sessionDescription: offer,
+          peerId: userData._id,
+          roomId: id,
+        });
+
+        localMediaStream.current
+          .getTracks()
+          .forEach((track: MediaStreamTrack) => {
+            peerConnection.addTrack(track, localMediaStream.current);
+          });
+      }
+
       await getRoomDetails();
     } catch (error) {
       console.error("Error joining the room:", error);
     }
   };
+
   useEffect(() => {
     getRoomDetails();
   }, [getRoomDetails]);
@@ -179,6 +251,57 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
     },
     []
   );
+
+  const handleIceCandidate = ({
+    iceCandidate,
+    peerId,
+  }: {
+    iceCandidate: any;
+    peerId: string;
+  }) => {
+    connections.current[peerId]?.addIceCandidate(iceCandidate);
+  };
+
+  const setRemoteMedia = async ({
+    peerId,
+    remoteSessionDescription,
+  }: {
+    peerId: string;
+    remoteSessionDescription: RTCSessionDescription;
+  }) => {
+    connections.current[peerId]?.setRemoteDescription(
+      new RTCSessionDescription(remoteSessionDescription)
+    );
+    if (remoteSessionDescription.type === "offer") {
+      const connection = connections.current[peerId];
+
+      const answer = await connection.createAnswer();
+      connection.setLocalDescription(answer);
+
+      socket.emit(ACTIONS.RELAY_SDP, {
+        peerId,
+        sessionDescription: answer,
+      });
+    }
+  };
+
+  // useEffect(()=>{
+  //   return()=>{
+  //     localMediaStream.current?.getTracks().forEach(track => {
+  //       track.stop();
+  //     });
+  //   }
+  // })
+
+  const provideRef = ({
+    audioInstance,
+    userId,
+  }: {
+    audioInstance: HTMLAudioElement;
+    userId: string;
+  }) => {
+    audioElements.current[userId] = audioInstance;
+  };
 
   const userMuteInfo = useCallback(({ users }: { users: User[] }) => {
     setUserData(users);
@@ -256,12 +379,13 @@ const RoomPage: FC<Props> = ({ primaryTheme }: Props) => {
                 <audio
                   autoPlay
                   muted={user?.isMuted}
-                  ref={(instance: HTMLAudioElement | null) => {
-                    // Specify the type for ref instance for audio transmission
+                  ref={(instance: HTMLAudioElement) => {
+                    // Need Specify the type for ref instance for audio transmission
+                    provideRef({ audioInstance: instance, userId: user._id });
                   }}
                   className=" max-md:hidden "
                   controls
-                ></audio>
+                />
                 <button
                   className="bg-blue-600 text-lg font-poppins rounded-full mt-2 mb-2 px-7 py-3"
                   onClick={() => {

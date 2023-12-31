@@ -74,11 +74,7 @@ const MainHome = ({ primaryTheme }: Props) => {
             <hr className=" w-[100px] mb-1 bg-primary-indigo h-1" />
           </div>
           <div className=" flex items-center max-w-3xl justify-between  ">
-            <Icon
-              component={SearchIcon}
-              fontSize="large"
-              className=" max-md:block absolute text-black mt-[10px] ml-[10px]"
-            />
+           
             <input
               type="text"
               placeholder="Search for Rooms"
@@ -86,7 +82,7 @@ const MainHome = ({ primaryTheme }: Props) => {
                 primaryTheme === "dark"
                   ? " bg-primary-white text-primary-black-700"
                   : "bg-primary-black-700 text-primary-white"
-              } px-10 py-4 rounded-full `}
+              } px-7 py-4 rounded-full `}
               onChange={(e) => {
                 setsearchVoiceRooms(e.target.value);
               }}

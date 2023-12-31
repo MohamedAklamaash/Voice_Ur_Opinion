@@ -62,7 +62,7 @@ io.on("connection", (socket: Socket) => {
     });
 
     socket.on(socketActions.ADD_PEER, ({ roomId, users }: { roomId: string; users: User[] }) => {
-        socketUserMap[roomId] = users; 
+        socketUserMap[roomId] = users;
     });
 
     socket.on(socketActions.MUTE, ({ roomId, userId }: { roomId: string; userId: string }) => {
@@ -80,7 +80,7 @@ io.on("connection", (socket: Socket) => {
 
         io.to(roomId).emit(socketActions.MUTE_INFO, { users: socketUserMap[roomId] });
         console.log(socketUserMap);
-        
+
         socket.join(roomId);
     });
 
@@ -96,7 +96,7 @@ io.on("connection", (socket: Socket) => {
 
             //When the user joins the room the user should send the offer for stream connection b/w the clients
             // of the application
-            
+
             if (user?.owner?.length > 0) {
                 // If user is the owner of the room, try to find the user in the database
                 const foundUser = await UserSchema.findOne({ name: user.owner });
@@ -111,10 +111,10 @@ io.on("connection", (socket: Socket) => {
             user["isMuted"] = false;
             user["socketId"] = socket.id;
             // if socket id is present in the object then the user is active
-            socketUserMap[roomId].forEach((usr:User, index:number) => {
-                io.to(user.socketId).emit()
-            });
-            
+            // socketUserMap[roomId].forEach((usr: User, index: number) => {
+            //     io.to(user.socketId).emit()
+            // });
+
             socketUserMap[roomId].push(user);
 
             // Emit the JOIN event to all users in the roomId
@@ -132,7 +132,6 @@ io.on("connection", (socket: Socket) => {
 
     socket.on(socketActions.LEAVE, ({ user, roomId }: { user: User; roomId: string }) => {
         try {
-            // Use the filter method correctly and update socketUserMap[roomId]
 
             socketUserMap[roomId] = socketUserMap[roomId].filter((data) => data.email !== user.email);
 
@@ -149,13 +148,18 @@ io.on("connection", (socket: Socket) => {
     });
 
     socket.on(socketActions.RELAY_ICE, ({ iceCandidate, roomId, peerId }: { iceCandidate: string, roomId: string, peerId: string }) => {
+        console.log("Relay ice event called!");
+
         io.to(roomId).emit(socketActions.ICE_CANDIDATE, {
             peerId,
             iceCandidate,
         })
+        console.log("IceCandidate:", iceCandidate);
     })
 
     socket.on(socketActions.RELAY_SDP, ({ sessionDescription, roomId, peerId }: { sessionDescription: string, roomId: string, peerId: string }) => {
+        console.log("Session description event called ");
+
         io.to(roomId).emit(socketActions.SESSION_DESCRIPTION, {
             sessionDescription,
             peerId

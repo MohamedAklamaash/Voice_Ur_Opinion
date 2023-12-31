@@ -83,7 +83,7 @@ const Navbar = ({ name, imgSrc, setprimaryTheme, primaryTheme }: Props) => {
       </nav>
       <nav className=" max-md:block hidden ">
         {isMenuToggled ? (
-          <div className=" bg-primary-indigo h-[100%] w-[100%px]  text-white">
+          <div className=" bg-primary-indigo absolute top-0 right-0 w-[100%] h-[100%]  bg-[rgba(2,1,10,0.84)]  text-white">
             <p
               onClick={() => {
                 setisMenuToggled(!isMenuToggled);
@@ -92,7 +92,7 @@ const Navbar = ({ name, imgSrc, setprimaryTheme, primaryTheme }: Props) => {
             >
               X
             </p>
-            <div className="">
+            <div className=" flex items-center flex-col gap-10 ">
               <h1 className=" p-2  font-poppins text-center tracking-wide text-lg font-bold text-white">
                 {name.charAt(0).toUpperCase() + name.slice(1)}
               </h1>
@@ -103,8 +103,17 @@ const Navbar = ({ name, imgSrc, setprimaryTheme, primaryTheme }: Props) => {
                   className="w-[50px] h-[50px] rounded-full mx-auto "
                 />
               </Link>
+              <h1
+                onClick={() => {
+                  localStorage.clear();
+                  window.location.href = "/";
+                }}
+                className=" text-2xl px-3 font-bold cursor-pointer font-roboto text-center "
+              >
+                LogOut
+              </h1>
             </div>
-            <div>
+            <div className=" mt-10">
               {primaryTheme === "dark" ? (
                 <div className=" flex space-x-4 justify-center items-center">
                   <h1>
